@@ -31,14 +31,14 @@ class HyperLink():
 class Czbooks():
     def __init__(
         self,
-        link: str,
+        code: str,
         title: str,
         description: str,
         author: str,
         hashtags: list[HyperLink],
         chapter_lists: list[HyperLink],
     ) -> None:
-        self.link = link
+        self.code = code
         self.title = title
         self.description = description
         self.author = author
@@ -67,8 +67,8 @@ class Czbooks():
         self.words_count = len(re.findall(chinese_char, self.content))
 
 
-def get_book(link: str) -> Czbooks:
-    soup = get_html(link)
+def get_book(code: str) -> Czbooks:
+    soup = get_html(f"https://czbooks.net/n/{code}")
     detail_div = soup.find("div", class_="novel-detail")
     # basic info
     title = detail_div.find("span", class_="title").text
@@ -92,8 +92,33 @@ def get_book(link: str) -> Czbooks:
     ]
 
     return Czbooks(
-        link, title, description, author, hashtags, chapter_lists
+        code, title, description, author, hashtags, chapter_lists
     )
+
+
+def add_cache(book: Czbooks):
+    with open("./data/books.json", "r+", encoding="utf-8") as file:
+        data = json.load(file)
+        data[book.code] = {
+            "code": book.code,
+            "title": book.title,
+            "description": book.description,
+            "author": book.author,
+            "hashtags": [
+                {
+                    "text": hashtag.text,
+                    "link": hashtag.link
+                } for hashtag in book.hashtags
+            ],
+            "chapters": [
+                {
+                    "text": chapter.text,
+                    "link": chapter.link
+                } for chapter in book.chapter_lists
+            ]
+        }
+        file.seek(0, 0)
+        json.dump(data, file, ensure_ascii=False)
 
 
 class BookCog(BaseCog):
@@ -133,7 +158,8 @@ class BookCog(BaseCog):
             code = link
         book = self.books_cache.get(code)
         if not book:
-            book = get_book(f"https://czbooks.net/n/{code}")
+            book = get_book(code)
+            add_cache(book)
             self.books_cache[code] = book
 
         embed = Embed(
