@@ -15,7 +15,8 @@ def get_html(link: str) -> BeautifulSoup | None:
         # 使用 BeautifulSoup 解析 HTML
         soup = BeautifulSoup(response.text, "html.parser")
         return soup
-    except Exception:
+    except Exception as e:
+        print(e)
         return None
 
 class Czbooks():
@@ -54,6 +55,8 @@ class Czbooks():
                 end=""
             )
             soup = get_html("https:"+link["href"])
+            if not soup:
+                continue
             # 尋找章節名稱
             # 尋找章節名稱 div 標籤
             ch_name = soup.find("div", class_="name")
