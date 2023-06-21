@@ -70,4 +70,4 @@ book = Czbooks(book_url)
 book.get_content()
 print(book.words_count)
 with open(f"{book.title}.txt", "w", encoding="utf-8") as file:
-    file.write(book.content.getvalue())
+    file.write(book.content)
