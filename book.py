@@ -8,6 +8,7 @@ from bs4 import BeautifulSoup
 
 chinese_char = re.compile(r"[\u4e00-\u9fa5]")
 
+
 def get_html(link: str) -> BeautifulSoup | None:
     try:
         # 發送 GET 請求取得網頁內容
@@ -15,9 +16,9 @@ def get_html(link: str) -> BeautifulSoup | None:
         # 使用 BeautifulSoup 解析 HTML
         soup = BeautifulSoup(response.text, "html.parser")
         return soup
-    except Exception as e:
-        print(e)
+    except Exception:
         return None
+
 
 class Czbooks():
     def __init__(self, link: str) -> None:
@@ -43,7 +44,6 @@ class Czbooks():
     def hashtag(self):
         return ", ".join(tag.text for tag in self.hashtags)
 
-
     def get_content(self):
         self.content = ""
         self.content += f"書本連結: {self.link}\n標籤: {self.hashtag()}"
@@ -54,9 +54,11 @@ class Czbooks():
                 f"\r進度: {index}/{self.ch_count} {process}%",
                 end=""
             )
-            soup = get_html("https:"+link["href"])
+            for _ in range(5):
+                if soup := get_html("https:"+link["href"]):
+                    break
             if not soup:
-                continue
+                print(f"\rError when get chapter {index}.")
             # 尋找章節名稱
             # 尋找章節名稱 div 標籤
             ch_name = soup.find("div", class_="name")
@@ -65,6 +67,7 @@ class Czbooks():
             # 儲存找到的內容
             self.content += f"\n\n{'='*32} {ch_name.text} {'='*32}\n\n"
             self.content += div_content.text.strip()
+        print("\rDone!")
         self.words_count = len(re.findall(chinese_char, self.content))
 
 
@@ -72,5 +75,5 @@ book_url = input("請輸入網站連結: ")
 book = Czbooks(book_url)
 book.get_content()
 print(book.words_count)
-with open(f"{book.title}.txt", "w", encoding="utf-8") as file:
+with open(f".data/{book.title}.txt", "w", encoding="utf-8") as file:
     file.write(book.content)
