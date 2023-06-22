@@ -49,7 +49,7 @@ class Czbooks():
         self.content = ""
         # 逐章爬取內容
         for ch in self.chapter_lists:
-            # retry if error
+            # retry when error
             for _ in range(5):
                 if soup := get_html(ch.link):
                     break
@@ -169,14 +169,14 @@ class BookCog(BaseCog):
         embed.add_field(
             name="書本簡述",
             value=book.description if len(
-                book.description) < 1024 else book.description[: 1020]+"...",
+                book.description) < 1024 else book.description[:1020]+" ...",
             inline=False
         )
         hashtag_len = 0
         hashtag_text = ""
         for hashtag in book.hashtags:
             hashtag_len += len(text := f"[{hashtag.text}]({hashtag.link}), ")
-            if hashtag_len > 1024:
+            if hashtag_len > 1020:
                 hashtag_text += " ..., "
                 break
             hashtag_text += text
@@ -185,7 +185,7 @@ class BookCog(BaseCog):
         chapter_text = ""
         for chapter in book.chapter_lists:
             chapter_len += len(text := f"[{chapter.text}]({chapter.link}), ")
-            if chapter_len > 1024:
+            if chapter_len > 1020:
                 chapter_text += " ..., "
                 break
             chapter_text += text
