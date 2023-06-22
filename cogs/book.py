@@ -1,5 +1,8 @@
 import json
 import re
+import os
+
+from pathlib import Path
 
 import requests
 import discord
@@ -46,7 +49,9 @@ class Czbooks():
         self.chapter_lists = chapter_lists
 
     def get_content(self):
-        self.content = ""
+        if os.path.exists(f"./data/{self.code}.txt"):
+            return
+        self.content = f"連結: https://czbooks.net/n/{self.code}"
         # 逐章爬取內容
         for ch in self.chapter_lists:
             # retry when error
@@ -65,6 +70,8 @@ class Czbooks():
             self.content += div_content.text.strip()
         # 計算總字數
         self.words_count = len(re.findall(chinese_char, self.content))
+        with open(f"./data/{self.code}.txt", "w", encoding="utf-8") as file:
+            file.write(self.content)
 
 
 def get_book(code: str) -> Czbooks:
@@ -188,7 +195,21 @@ class BookCog(BaseCog):
                 break
             chapter_text += text
         embed.add_field(name="章節列表", value=chapter_text[:-2], inline=False)
-        await ctx.respond(embed=embed)
+        info_msg = await ctx.respond(embed=embed)
+        # print(info_msg)
+        # print(info_msg.followup)
+        content_msg = await info_msg.followup.send(
+            embed=Embed(
+                title="擷取內文中...",
+                description=f"共{len(book.chapter_lists)}章",
+            )
+        )
+        book.get_content()
+        await content_msg.edit(
+            "內文擷取完畢!",
+            embed=None,
+            file=discord.File(Path(f"./data/{book.code}.txt")),
+        )
 
 
 def setup(bot: Bot):
