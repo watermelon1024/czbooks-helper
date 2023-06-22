@@ -73,9 +73,7 @@ def get_book(code: str) -> Czbooks:
     # basic info
     title = detail_div.find("span", class_="title").text
     description = detail_div.find("div", class_="description").text
-    author = (
-        "作者: " + detail_div.find("span", class_="author").contents[1].text
-    )
+    author = detail_div.find("span", class_="author").contents[1].text
     # hashtags
     hashtags = [
         HyperLink(hashtag.text, "https:"+hashtag["href"])
