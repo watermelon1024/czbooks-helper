@@ -37,6 +37,7 @@ class Czbooks():
         code: str,
         title: str,
         description: str,
+        thumbnail: str | None,
         author: str,
         hashtags: list[HyperLink],
         chapter_lists: list[HyperLink],
@@ -44,6 +45,7 @@ class Czbooks():
         self.code = code
         self.title = title
         self.description = description
+        self.thumbnail = thumbnail
         self.author = author
         self.hashtags = hashtags
         self.chapter_lists = chapter_lists
@@ -80,6 +82,9 @@ def get_book(code: str) -> Czbooks:
     # basic info
     title = detail_div.find("span", class_="title").text
     description = detail_div.find("div", class_="description").text
+    thumbnail = detail_div.find("img").get("src")
+    if not thumbnail.startswith("https://img.czbooks.net"):
+        thumbnail = None
     author = detail_div.find("span", class_="author").contents[1].text
     # hashtags
     hashtags = [
@@ -97,7 +102,7 @@ def get_book(code: str) -> Czbooks:
     ]
 
     return Czbooks(
-        code, title, description, author, hashtags, chapter_lists
+        code, title, description, thumbnail, author, hashtags, chapter_lists
     )
 
 
@@ -108,6 +113,7 @@ def add_cache(book: Czbooks):
             "code": book.code,
             "title": book.title,
             "description": book.description,
+            "thumbnail": book.thumbnail,
             "author": book.author,
             "hashtags": [
                 {
@@ -133,7 +139,7 @@ class BookCog(BaseCog):
             data: dict[str, dict] = json.load(file)
             self.books_cache = {
                 code: Czbooks(
-                    *list(detail.values())[:4],
+                    *list(detail.values())[:5],
                     [
                         HyperLink(hashtag["text"], hashtag["link"])
                         for hashtag in detail["hashtags"]
@@ -177,6 +183,7 @@ class BookCog(BaseCog):
                 book.description) < 1024 else book.description[:1020]+" ...",
             inline=False
         )
+
         hashtag_len = 0
         hashtag_text = ""
         for hashtag in book.hashtags:
@@ -186,6 +193,7 @@ class BookCog(BaseCog):
                 break
             hashtag_text += text
         embed.add_field(name="標籤", value=hashtag_text[:-2], inline=False)
+
         chapter_len = 0
         chapter_text = ""
         for chapter in book.chapter_lists:
@@ -195,9 +203,11 @@ class BookCog(BaseCog):
                 break
             chapter_text += text
         embed.add_field(name="章節列表", value=chapter_text[:-2], inline=False)
+
+        if book.thumbnail:
+            embed.set_thumbnail(url=book.thumbnail)
         info_msg = await ctx.respond(embed=embed)
-        # print(info_msg)
-        # print(info_msg.followup)
+
         content_msg = await info_msg.followup.send(
             embed=Embed(
                 title="擷取內文中...",
