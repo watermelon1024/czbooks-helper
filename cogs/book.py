@@ -6,7 +6,8 @@ from pathlib import Path
 import requests
 import discord
 
-from discord import Embed, ApplicationContext, Bot
+from discord import Embed, ApplicationContext, Interaction, Bot
+from discord.ui import View, Button
 from bot import BaseCog
 from bs4 import BeautifulSoup
 
@@ -142,26 +143,29 @@ def add_cache(book: Czbooks):
         }
         file.seek(0, 0)
         json.dump(data, file, ensure_ascii=False)
+        file.truncate()
+
+
+with open("./data/books.json", "r", encoding="utf-8") as file:
+    data: dict[str, dict] = json.load(file)
+    books_cache = {
+        code: Czbooks(
+            *list(detail.values())[:7],
+            [
+                HyperLink(hashtag["text"], hashtag["link"])
+                for hashtag in detail["hashtags"]
+            ],
+            [
+                HyperLink(chapter["text"], chapter["link"])
+                for chapter in detail["chapters"]
+            ]
+        ) for code, detail in data.items()
+    }
 
 
 class BookCog(BaseCog):
     def __init__(self, bot: Bot) -> None:
         super().__init__(bot)
-        with open("./data/books.json", "r", encoding="utf-8") as file:
-            data: dict[str, dict] = json.load(file)
-            self.books_cache = {
-                code: Czbooks(
-                    *list(detail.values())[:7],
-                    [
-                        HyperLink(hashtag["text"], hashtag["link"])
-                        for hashtag in detail["hashtags"]
-                    ],
-                    [
-                        HyperLink(chapter["text"], chapter["link"])
-                        for chapter in detail["chapters"]
-                    ]
-                ) for code, detail in data.items()
-            }
 
     @discord.slash_command(
         guild_only=True,
@@ -171,7 +175,6 @@ class BookCog(BaseCog):
     @discord.option(
         "link",
         str,
-        # name="書本連結",
         description="欲查詢的書本連結",
     )
     async def info(self, ctx: ApplicationContext, link: str):
@@ -179,15 +182,15 @@ class BookCog(BaseCog):
             code = match.group(2)
         else:
             code = link
-        book = self.books_cache.get(code)
+        book = books_cache.get(code)
         if not book:
             book = get_book(code)
             add_cache(book)
-            self.books_cache[code] = book
+            books_cache[code] = book
 
         embed = Embed(
             title=book.title,
-            description=f"- 作者: {book.author}"
+            description=f"https://czbooks.net/n/{code}\n- 作者: {book.author}"
         )
         embed.add_field(
             name="書本簡述",
@@ -220,17 +223,53 @@ class BookCog(BaseCog):
 
         if book.thumbnail:
             embed.set_thumbnail(url=book.thumbnail)
-        info_msg = await ctx.respond(embed=embed)
 
-        content_msg = await info_msg.followup.send(
+        await ctx.respond(embed=embed, view=GetContentView(self.bot))
+
+    @discord.Cog.listener()
+    async def on_ready(self):
+        self.bot.add_view(GetContentView(self.bot))
+
+
+class GetContentView(View):
+    def __init__(self, bot: Bot):
+        super().__init__(timeout=None)
+        self.bot = bot
+
+        (
+            get_content_button := Button(
+                custom_id="get_content_button",
+                label="取得內文",
+            )
+        ).callback = self.get_content_button_callback
+
+        self.add_item(get_content_button)
+
+        self.disable_get_content_button = Button(
+            custom_id="get_content_button",
+            label="取得內文",
+            disabled=True,
+        )
+
+    async def get_content_button_callback(self, interaction: Interaction):
+        await interaction.message.edit(
+            view=View(self.disable_get_content_button)
+        )
+
+        code = re.search(
+            re_code, interaction.message.embeds[0].description
+        ).group(2)
+        book = books_cache.get(code)
+
+        content_msg = await interaction.response.send_message(
             embed=Embed(
                 title="擷取內文中...",
                 description=f"共{len(book.chapter_list)}章",
             )
         )
         book.get_content()
-        await content_msg.edit(
-            f"內文擷取完畢，共`{book.words_count}`字",
+        await content_msg.edit_original_response(
+            content=f"內文擷取完畢，共`{book.words_count}`字",
             embed=None,
             file=discord.File(Path(f"./data/{book.code}.txt")),
         )
