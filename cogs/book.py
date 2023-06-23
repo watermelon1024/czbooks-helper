@@ -40,7 +40,7 @@ class Czbooks():
         thumbnail: str | None,
         author: str,
         hashtags: list[HyperLink],
-        chapter_lists: list[HyperLink],
+        chapter_list: list[HyperLink],
     ) -> None:
         self.code = code
         self.title = title
@@ -48,14 +48,14 @@ class Czbooks():
         self.thumbnail = thumbnail
         self.author = author
         self.hashtags = hashtags
-        self.chapter_lists = chapter_lists
+        self.chapter_list = chapter_list
 
     def get_content(self):
         if os.path.exists(f"./data/{self.code}.txt"):
             return
         self.content = f"連結: https://czbooks.net/n/{self.code}"
         # 逐章爬取內容
-        for ch in self.chapter_lists:
+        for ch in self.chapter_list:
             # retry when error
             for _ in range(5):
                 if soup := get_html(ch.link):
@@ -125,7 +125,7 @@ def add_cache(book: Czbooks):
                 {
                     "text": chapter.text,
                     "link": chapter.link
-                } for chapter in book.chapter_lists
+                } for chapter in book.chapter_list
             ]
         }
         file.seek(0, 0)
@@ -197,10 +197,10 @@ class BookCog(BaseCog):
 
         chapter_len = 0
         chapter_text = ""
-        for chapter in book.chapter_lists:
+        for chapter in book.chapter_list:
             chapter_len += len(text := f"[{chapter.text}]({chapter.link}), ")
             if chapter_len > 1020:
-                chapter = book.chapter_lists[-1]
+                chapter = book.chapter_list[-1]
                 chapter_text += f" ..., [{chapter.text}]({chapter.link})"
                 break
             chapter_text += text
@@ -213,7 +213,7 @@ class BookCog(BaseCog):
         content_msg = await info_msg.followup.send(
             embed=Embed(
                 title="擷取內文中...",
-                description=f"共{len(book.chapter_lists)}章",
+                description=f"共{len(book.chapter_list)}章",
             )
         )
         book.get_content()
