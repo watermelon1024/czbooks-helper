@@ -199,27 +199,36 @@ class BookCog(BaseCog):
             inline=False
         )
 
-        hashtag_len = 0
         hashtag_text = ""
-        for hashtag in book.hashtags:
+        hashtag = book.hashtags[-1]
+        hashtag_len = len(
+            last_hashtag := f"[{hashtag.text}]({hashtag.link})"
+        )
+        for hashtag in book.hashtags[:-1]:
             hashtag_len += len(text := f"[{hashtag.text}]({hashtag.link}), ")
-            if hashtag_len > 1020:
-                hashtag = book.hashtags[-1]
-                hashtag_text += f" ..., [{hashtag.text}]({hashtag.link})"
+            if hashtag_len > 1018:
+                hashtag_text += " ..., "
                 break
             hashtag_text += text
-        embed.add_field(name="標籤", value=hashtag_text[:-2], inline=False)
+        hashtag_text += last_hashtag
+        embed.add_field(name="標籤", value=hashtag_text, inline=False)
 
-        chapter_len = 0
         chapter_text = ""
-        for chapter in book.chapter_list:
+        chapter = book.chapter_list[-1]
+        chapter_len = len(
+            last_chapter := f"[{chapter.text}]({chapter.link})"
+        )
+        for chapter in book.chapter_list[:-1]:
             chapter_len += len(text := f"[{chapter.text}]({chapter.link}), ")
-            if chapter_len > 1020:
-                chapter = book.chapter_list[-1]
-                chapter_text += f" ..., [{chapter.text}]({chapter.link})"
+            if chapter_len > 1018:
+                chapter_text += " ..., "
                 break
             chapter_text += text
-        embed.add_field(name="章節列表", value=chapter_text[:-2], inline=False)
+        chapter_text += last_chapter
+        embed.add_field(
+            name=f"章節列表(共{len(book.chapter_list)}章)", value=chapter_text,
+            inline=False,
+        )
 
         if book.thumbnail:
             embed.set_thumbnail(url=book.thumbnail)
