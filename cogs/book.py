@@ -189,7 +189,8 @@ class BookCog(BaseCog):
         for hashtag in book.hashtags:
             hashtag_len += len(text := f"[{hashtag.text}]({hashtag.link}), ")
             if hashtag_len > 1020:
-                hashtag_text += " ..., "
+                hashtag = book.hashtags[-1]
+                hashtag_text += f" ..., [{hashtag.text}]({hashtag.link})"
                 break
             hashtag_text += text
         embed.add_field(name="標籤", value=hashtag_text[:-2], inline=False)
@@ -199,7 +200,8 @@ class BookCog(BaseCog):
         for chapter in book.chapter_lists:
             chapter_len += len(text := f"[{chapter.text}]({chapter.link}), ")
             if chapter_len > 1020:
-                chapter_text += " ..., "
+                chapter = book.chapter_lists[-1]
+                chapter_text += f" ..., [{chapter.text}]({chapter.link})"
                 break
             chapter_text += text
         embed.add_field(name="章節列表", value=chapter_text[:-2], inline=False)
