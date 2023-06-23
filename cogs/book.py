@@ -1,6 +1,5 @@
 import json
 import re
-import os
 
 from pathlib import Path
 
@@ -39,6 +38,8 @@ class Czbooks():
         description: str,
         thumbnail: str | None,
         author: str,
+        content_cache: bool,
+        words_count: int,
         hashtags: list[HyperLink],
         chapter_list: list[HyperLink],
     ) -> None:
@@ -47,13 +48,17 @@ class Czbooks():
         self.description = description
         self.thumbnail = thumbnail
         self.author = author
+        self.content_cache = content_cache
+        self.words_count = words_count
         self.hashtags = hashtags
         self.chapter_list = chapter_list
 
     def get_content(self):
-        if os.path.exists(f"./data/{self.code}.txt"):
+        if self.content_cache:
             return
+
         self.content = f"連結: https://czbooks.net/n/{self.code}"
+        self.words_count = 0
         # 逐章爬取內容
         for ch in self.chapter_list:
             # retry when error
@@ -70,10 +75,14 @@ class Czbooks():
             # 儲存找到的內容
             self.content += f"\n\n{'='*32} {ch_name.text} {'='*32}\n\n"
             self.content += div_content.text.strip()
-        # 計算總字數
-        self.words_count = len(re.findall(chinese_char, self.content))
+            # 計算總字數
+            self.words_count += len(re.findall(chinese_char, div_content.text))
+
         with open(f"./data/{self.code}.txt", "w", encoding="utf-8") as file:
             file.write(self.content)
+
+        self.content_cache = True
+        add_cache(self)
 
 
 def get_book(code: str) -> Czbooks:
@@ -102,7 +111,8 @@ def get_book(code: str) -> Czbooks:
     ]
 
     return Czbooks(
-        code, title, description, thumbnail, author, hashtags, chapter_lists
+        code, title, description, thumbnail, author, False, 0,
+        hashtags, chapter_lists,
     )
 
 
@@ -115,6 +125,8 @@ def add_cache(book: Czbooks):
             "description": book.description,
             "thumbnail": book.thumbnail,
             "author": book.author,
+            "content_cache": book.content_cache,
+            "words_count": book.words_count,
             "hashtags": [
                 {
                     "text": hashtag.text,
@@ -139,7 +151,7 @@ class BookCog(BaseCog):
             data: dict[str, dict] = json.load(file)
             self.books_cache = {
                 code: Czbooks(
-                    *list(detail.values())[:5],
+                    *list(detail.values())[:7],
                     [
                         HyperLink(hashtag["text"], hashtag["link"])
                         for hashtag in detail["hashtags"]
@@ -218,7 +230,7 @@ class BookCog(BaseCog):
         )
         book.get_content()
         await content_msg.edit(
-            "內文擷取完畢!",
+            f"內文擷取完畢，共`{book.words_count}`字",
             embed=None,
             file=discord.File(Path(f"./data/{book.code}.txt")),
         )
