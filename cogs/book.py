@@ -190,7 +190,7 @@ class BookCog(BaseCog):
 
         embed = Embed(
             title=book.title,
-            description=f"https://czbooks.net/n/{code}\n- 作者: {book.author}"
+            description=f"https://czbooks.net/n/{code}\n- 作者: {book.author}\n- 總字數: `{f'{book.words_count}字' if book.words_count else '請點擊取得內文已取得字數'}`"  # noqa
         )
         embed.add_field(
             name="書本簡述",
@@ -276,9 +276,16 @@ class GetContentView(View):
                 description=f"共{len(book.chapter_list)}章",
             )
         )
-        book.get_content()
+        if not book.content_cache:
+            book.get_content()
+            await interaction.message.edit(
+                embed = Embed(
+                    title=book.title,
+                    description=f"https://czbooks.net/n/{code}\n- 作者: {book.author}\n- 總字數: `{book.words_count}`字"  # noqa
+                )
+            )
         await content_msg.edit_original_response(
-            content=f"內文擷取完畢，共`{book.words_count}`字",
+            content=f"- 書名: {book.title}\n- 總字數: `{book.words_count}`字",
             embed=None,
             file=discord.File(Path(f"./data/{book.code}.txt")),
         )
