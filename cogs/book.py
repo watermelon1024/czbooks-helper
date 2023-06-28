@@ -278,12 +278,11 @@ class GetContentView(View):
         )
         if not book.content_cache:
             book.get_content()
-            await interaction.message.edit(
-                embed = Embed(
-                    title=book.title,
-                    description=f"https://czbooks.net/n/{code}\n- 作者: {book.author}\n- 總字數: `{book.words_count}`字"  # noqa
-                )
-            )
+
+            original_embed = interaction.message.embeds[0]
+            original_embed.description = f"https://czbooks.net/n/{code}\n- 作者: {book.author}\n- 總字數: `{book.words_count}`字"  # noqa
+            await interaction.message.edit(embed=original_embed)
+
         await content_msg.edit_original_response(
             content=f"- 書名: {book.title}\n- 總字數: `{book.words_count}`字",
             embed=None,
