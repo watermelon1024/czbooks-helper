@@ -190,7 +190,7 @@ class BookCog(BaseCog):
 
         embed = Embed(
             title=book.title,
-            description=f"https://czbooks.net/n/{code}\n- 作者: {book.author}\n- 總字數: `{f'{book.words_count}字' if book.words_count else '請點擊取得內文已取得字數'}`"  # noqa
+            description=f"https://czbooks.net/n/{code}\n- 作者: {book.author}\n- 總字數: {f'`{book.words_count}`字' if book.words_count else '`請點擊取得內文以取得字數`'}"  # noqa
         )
         embed.add_field(
             name="書本簡述",
