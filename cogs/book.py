@@ -178,6 +178,7 @@ class BookCog(BaseCog):
         description="欲查詢的書本連結",
     )
     async def info(self, ctx: ApplicationContext, link: str):
+        print(f"{ctx.author} use /info link: {link} .")
         if match := re.search(re_code, link):
             code = match.group(2)
         else:
@@ -277,7 +278,9 @@ class GetContentView(View):
             )
         )
         if not book.content_cache:
+            print(f"{interaction.user} starts getting {book.title}'s content")
             book.get_content()
+            print(f"done, total words: {book.words_count}.")
 
             original_embed = interaction.message.embeds[0]
             original_embed.description = f"https://czbooks.net/n/{code}\n- 作者: {book.author}\n- 總字數: `{book.words_count}`字"  # noqa
