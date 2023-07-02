@@ -95,7 +95,7 @@ class Czbooks():
             if now_time - last_time > 3:
                 last_time = now_time
                 progress, bar = progress_bar(index, chapter_count)
-                eta = total_diff/progress
+                eta = total_diff/progress - total_diff
                 await msg.edit_original_response(
                     embed=Embed(
                         title="擷取內文中...",
