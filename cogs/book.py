@@ -18,7 +18,7 @@ re_code = re.compile(r"(czbooks\.net\/n\/)([a-z0-9]+)")
 
 
 def progress_bar(
-    current: int, total: int, bar_length: int = 33,
+    current: int, total: int, bar_length: int = 25,
 ) -> tuple[float, str]:
     percentage = current / total
     filled_length = int(bar_length * percentage)
