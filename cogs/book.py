@@ -3,7 +3,7 @@ import re
 
 from pathlib import Path
 
-import requests
+import aiohttp
 import discord
 
 from discord import Embed, ApplicationContext, Interaction, Bot
@@ -16,12 +16,13 @@ chinese_char = re.compile(r"[\u4e00-\u9fa5]")
 re_code = re.compile(r"(czbooks\.net\/n\/)([a-z0-9]+)")
 
 
-def get_html(link: str) -> BeautifulSoup | None:
+async def get_html(link: str) -> BeautifulSoup | None:
     try:
-        response = requests.get(link)
-        soup = BeautifulSoup(response.text, "html.parser")
-        return soup
-    except Exception:
+        async with aiohttp.request('GET', link) as response:
+            soup = BeautifulSoup(await response.text(), "html.parser")
+            return soup
+    except Exception as e:
+        print("ERROR:", e)
         return None
 
 
@@ -54,7 +55,7 @@ class Czbooks():
         self.hashtags = hashtags
         self.chapter_list = chapter_list
 
-    def get_content(self):
+    async def get_content(self):
         if self.content_cache:
             return
 
@@ -64,7 +65,7 @@ class Czbooks():
         for ch in self.chapter_list:
             # retry when error
             for _ in range(5):
-                if soup := get_html(ch.link):
+                if soup := await get_html(ch.link):
                     break
             if not soup:
                 print(f"Error when getting {ch.link} .")
@@ -86,8 +87,8 @@ class Czbooks():
         add_cache(self)
 
 
-def get_book(code: str) -> Czbooks:
-    soup = get_html(f"https://czbooks.net/n/{code}")
+async def get_book(code: str) -> Czbooks:
+    soup = await get_html(f"https://czbooks.net/n/{code}")
     detail_div = soup.find("div", class_="novel-detail")
     # basic info
     title = detail_div.find("span", class_="title").text
@@ -185,7 +186,7 @@ class BookCog(BaseCog):
             code = link
         book = books_cache.get(code)
         if not book:
-            book = get_book(code)
+            book = await get_book(code)
             add_cache(book)
             books_cache[code] = book
 
@@ -279,7 +280,7 @@ class GetContentView(View):
         )
         if not book.content_cache:
             print(f"{interaction.user} starts getting {book.title}'s content")
-            book.get_content()
+            await book.get_content()
             print(f"done, total words: {book.words_count}.")
 
             original_embed = interaction.message.embeds[0]
