@@ -1,6 +1,7 @@
 import json
 import re
 
+from datetime import datetime
 from pathlib import Path
 
 import aiohttp
@@ -14,6 +15,14 @@ from bs4 import BeautifulSoup
 
 chinese_char = re.compile(r"[\u4e00-\u9fa5]")
 re_code = re.compile(r"(czbooks\.net\/n\/)([a-z0-9]+)")
+
+
+def progress_bar(
+    current: int, total: int, bar_length: int = 33,
+) -> tuple[float, str]:
+    percentage = current / total
+    filled_length = int(bar_length * percentage)
+    return percentage, f"[{'='*filled_length}{' '*(bar_length-filled_length)}]"
 
 
 async def get_html(link: str) -> BeautifulSoup | None:
@@ -55,14 +64,14 @@ class Czbooks():
         self.hashtags = hashtags
         self.chapter_list = chapter_list
 
-    async def get_content(self):
-        if self.content_cache:
-            return
-
+    async def get_content(self, msg: Interaction):
         self.content = f"連結: https://czbooks.net/n/{self.code}"
         self.words_count = 0
+        chapter_count = len(self.chapter_list)
         # 逐章爬取內容
-        for ch in self.chapter_list:
+        start_time = datetime.now().timestamp()
+        last_time = start_time
+        for index, ch in enumerate(self.chapter_list, start=1):
             # retry when error
             for _ in range(5):
                 if soup := await get_html(ch.link):
@@ -79,6 +88,21 @@ class Czbooks():
             self.content += div_content.text.strip()
             # 計算總字數
             self.words_count += len(re.findall(chinese_char, div_content.text))
+
+            # 計算進度
+            now_time = datetime.now().timestamp()
+            total_diff = now_time - start_time
+            if now_time - last_time > 3:
+                last_time = now_time
+                progress, bar = progress_bar(index, chapter_count)
+                eta = total_diff/progress
+                await msg.edit_original_response(
+                    embed=Embed(
+                        title="擷取內文中...",
+                        description=f"{progress*100:.1f}% {index}/{chapter_count}```{bar}```預計剩餘時間: {eta:.1f}秒"  # noqa
+                        # description=f"共{len(book.chapter_list)}章",
+                    )
+                )
 
         with open(f"./data/{self.code}.txt", "w", encoding="utf-8") as file:
             file.write(self.content)
@@ -179,7 +203,7 @@ class BookCog(BaseCog):
         description="欲查詢的書本連結",
     )
     async def info(self, ctx: ApplicationContext, link: str):
-        print(f"{ctx.author} use /info link: {link} .")
+        print(f"{ctx.author} used /info link: {link}")
         if match := re.search(re_code, link):
             code = match.group(2)
         else:
@@ -275,13 +299,12 @@ class GetContentView(View):
         content_msg = await interaction.response.send_message(
             embed=Embed(
                 title="擷取內文中...",
-                description=f"共{len(book.chapter_list)}章",
             )
         )
         if not book.content_cache:
-            print(f"{interaction.user} starts getting {book.title}'s content")
-            await book.get_content()
-            print(f"done, total words: {book.words_count}.")
+            print(f"{interaction.user} gets {book.title}'s content")
+            await book.get_content(content_msg)
+            print(f"{book.title} total words: {book.words_count}.")
 
             original_embed = interaction.message.embeds[0]
             original_embed.description = f"https://czbooks.net/n/{code}\n- 作者: {book.author}\n- 總字數: `{book.words_count}`字"  # noqa
