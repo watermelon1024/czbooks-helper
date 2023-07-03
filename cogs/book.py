@@ -25,14 +25,16 @@ def progress_bar(
     return percentage, f"[{'='*filled_length}{' '*(bar_length-filled_length)}]"
 
 
-async def get_html(link: str) -> BeautifulSoup | None:
+async def get_html(link: str) -> tuple[BeautifulSoup | None, int | None]:
     try:
-        async with aiohttp.request('GET', link) as response:
+        async with aiohttp.request("GET", link) as response:
+            if response.status >= 300:
+                return None, response.status
             soup = BeautifulSoup(await response.text(), "html.parser")
-            return soup
+            return soup, response.status
     except Exception as e:
         print("ERROR:", e)
-        return None
+        return None, None
 
 
 class HyperLink():
@@ -72,10 +74,7 @@ class Czbooks():
         start_time = datetime.now().timestamp()
         last_time = start_time
         for index, ch in enumerate(self.chapter_list, start=1):
-            # retry when error
-            for _ in range(5):
-                if soup := await get_html(ch.link):
-                    break
+            soup, _ = await get_html(ch.link)
             if not soup:
                 print(f"Error when getting {ch.link} .")
             # 尋找章節名稱
@@ -111,8 +110,11 @@ class Czbooks():
         add_cache(self)
 
 
-async def get_book(code: str) -> Czbooks:
-    soup = await get_html(f"https://czbooks.net/n/{code}")
+async def get_book(code: str) -> tuple[Czbooks | None, int]:
+    soup, status_code = await get_html(f"https://czbooks.net/n/{code}")
+    if status_code >= 300:
+        return None, status_code
+
     detail_div = soup.find("div", class_="novel-detail")
     # basic info
     title = detail_div.find("span", class_="title").text
@@ -136,13 +138,17 @@ async def get_book(code: str) -> Czbooks:
         ).find_all("a")
     ]
 
-    return Czbooks(
+    book = Czbooks(
         code, title, description, thumbnail, author, False, 0,
         hashtags, chapter_lists,
     )
+    add_cache(book)
+
+    return book, status_code
 
 
 def add_cache(book: Czbooks):
+    books_cache[book.code] = book
     with open("./data/books.json", "r+", encoding="utf-8") as file:
         data = json.load(file)
         data[book.code] = {
@@ -210,9 +216,15 @@ class BookCog(BaseCog):
             code = link
         book = books_cache.get(code)
         if not book:
-            book = await get_book(code)
-            add_cache(book)
-            books_cache[code] = book
+            book, status_code = await get_book(code)
+            if status_code == 404:
+                return await ctx.respond(
+                    embed=Embed(title="未知的書本")
+                )
+            elif status_code >= 300:
+                return await ctx.respond(
+                    embed=Embed(title="未知的錯誤")
+                )
 
         embed = Embed(
             title=book.title,
