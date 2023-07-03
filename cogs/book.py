@@ -17,6 +17,15 @@ chinese_char = re.compile(r"[\u4e00-\u9fa5]")
 re_code = re.compile(r"(czbooks\.net\/n\/)([a-z0-9]+)")
 
 
+class NotFoundError(Exception):
+    """
+    Book not found.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+
 def progress_bar(
     current: int, total: int, bar_length: int = 25,
 ) -> tuple[float, str]:
@@ -25,16 +34,12 @@ def progress_bar(
     return percentage, f"[{'='*filled_length}{' '*(bar_length-filled_length)}]"
 
 
-async def get_html(link: str) -> tuple[BeautifulSoup | None, int | None]:
-    try:
-        async with aiohttp.request("GET", link) as response:
-            if response.status >= 300:
-                return None, response.status
-            soup = BeautifulSoup(await response.text(), "html.parser")
-            return soup, response.status
-    except Exception as e:
-        print("ERROR:", e)
-        return None, None
+async def get_html(link: str) -> BeautifulSoup:
+    async with aiohttp.request("GET", link) as response:
+        if response.status == 404:
+            raise NotFoundError()
+        soup = BeautifulSoup(await response.text(), "html.parser")
+        return soup
 
 
 class HyperLink:
@@ -77,27 +82,26 @@ class Czbooks:
         start_time = datetime.now().timestamp()
         last_time = start_time
         for index, ch in enumerate(self.chapter_list, start=1):
-            soup, _ = await get_html(ch.link)
-            if not soup:
-                print(f"Error when getting {ch.link} .")
-            # 尋找章節名稱
-            # 尋找章節名稱 div 標籤
+            try:
+                soup = await get_html(ch.link)
+            except Exception as e:
+                print(f"Error when getting {ch.link}: {e}")
+            # 尋找章節
             ch_name = soup.find("div", class_="name")
-            # 尋找內文 div 標籤
+            # 尋找內文
             div_content = ch_name.find_next("div", class_="content")
-            # 儲存找到的內容
             self.content += f"\n\n{'='*32} {ch_name.text} {'='*32}\n\n"
             self.content += div_content.text.strip()
-            # 計算總字數
+            # 計算字數
             self.words_count += len(re.findall(chinese_char, div_content.text))
 
             # 計算進度
             now_time = datetime.now().timestamp()
             total_diff = now_time - start_time
-            if now_time - last_time > 3:
+            if now_time - last_time > 2:
                 last_time = now_time
                 progress, bar = progress_bar(index, chapter_count)
-                eta = total_diff/progress - total_diff
+                eta = total_diff / progress - total_diff
                 await msg.edit_original_response(
                     embed=Embed(
                         title="擷取內文中...",
@@ -112,11 +116,8 @@ class Czbooks:
         add_cache(self)
 
 
-async def get_book(code: str) -> tuple[Czbooks | None, int]:
-    soup, status_code = await get_html(f"https://czbooks.net/n/{code}")
-    if status_code >= 300:
-        return None, status_code
-
+async def get_book(code: str) -> Czbooks:
+    soup = await get_html(f"https://czbooks.net/n/{code}")
     detail_div = soup.find("div", class_="novel-detail")
     # basic info
     title = detail_div.find("span", class_="title").text
@@ -140,13 +141,14 @@ async def get_book(code: str) -> tuple[Czbooks | None, int]:
         ).find_all("a")
     ]
 
-    book = Czbooks(
-        code, title, description, thumbnail, author, False, 0,
-        hashtags, chapter_lists,
+    add_cache(
+        book := Czbooks(
+            code, title, description, thumbnail, author, False, 0,
+            hashtags, chapter_lists,
+        )
     )
-    add_cache(book)
 
-    return book, status_code
+    return book
 
 
 def add_cache(book: Czbooks):
@@ -269,17 +271,21 @@ class BookCog(BaseCog):
             code = link
         book = books_cache.get(code)
         if not book:
-            book, status_code = await get_book(code)
-            if status_code == 404:
+            try:
+                book = await get_book(code)
+            except NotFoundError:
                 return await ctx.respond(
-                    embed=Embed(title="未知的書本")
-                )
-            elif status_code >= 300:
-                return await ctx.respond(
-                    embed=Embed(title="未知的錯誤")
+                    embed=Embed(title="未知的書本", color=discord.Color.red())
                 )
 
         await ctx.respond(embed=overview_embed(book), view=InfoView(self.bot))
+
+    @info.error
+    async def on_info_error(self, ctx: ApplicationContext, error):
+        await ctx.respond(
+            embed=Embed(title="發生未知的錯誤", color=discord.Color.red()),
+            ephemeral=True
+        )
 
     @discord.Cog.listener()
     async def on_ready(self):
@@ -348,6 +354,7 @@ class InfoView(View):
         content_msg = await interaction.response.send_message(
             embed=Embed(
                 title="擷取內文中...",
+                description="正在計算進度..."
             )
         )
         if not book.content_cache:
