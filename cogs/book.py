@@ -37,13 +37,16 @@ async def get_html(link: str) -> tuple[BeautifulSoup | None, int | None]:
         return None, None
 
 
-class HyperLink():
+class HyperLink:
     def __init__(self, text: str, link: str) -> None:
         self.text = text
         self.link = link
 
+    def __str__(self) -> str:
+        return f"[{self.text}]({self.link})"
 
-class Czbooks():
+
+class Czbooks:
     def __init__(
         self,
         code: str,
@@ -98,8 +101,7 @@ class Czbooks():
                 await msg.edit_original_response(
                     embed=Embed(
                         title="擷取內文中...",
-                        description=f"{progress*100:.1f}% {index}/{chapter_count}```{bar}```預計剩餘時間: {eta:.1f}秒"  # noqa
-                        # description=f"共{len(book.chapter_list)}章",
+                        description=f"{progress*100:.1f}% {index}/{chapter_count}章```{bar}```預計剩餘時間: {eta:.1f}秒"  # noqa
                     )
                 )
 
@@ -194,6 +196,57 @@ with open("./data/books.json", "r", encoding="utf-8") as file:
     }
 
 
+def overview_embed(book: Czbooks) -> Embed:
+    embed = Embed(
+        title=book.title,
+        description=f"https://czbooks.net/n/{book.code}\n- 作者: {book.author}\n- 總字數: {f'`{book.words_count}`字' if book.words_count else '`請點擊取得內文以取得字數`'}"  # noqa
+    )
+    embed.add_field(
+        name="書本簡述",
+        value=book.description if len(
+            book.description) < 1024 else book.description[:1020]+" ...",
+        inline=False
+    )
+
+    hashtag_text = ""
+    hashtag_len = len(
+        last_hashtag := str(book.hashtags[-1])
+    )
+    for hashtag in book.hashtags[:-1]:
+        hashtag_len += len(text := f"{hashtag}, ")
+        if hashtag_len > 1018:
+            hashtag_text += " ..., "
+            break
+        hashtag_text += text
+    hashtag_text += last_hashtag
+    embed.add_field(name="標籤", value=hashtag_text, inline=False)
+
+    if book.thumbnail:
+        embed.set_thumbnail(url=book.thumbnail)
+
+    return embed
+
+
+def chapter_embed(book: Czbooks) -> Embed:
+    chapter_len = len(
+        chapter_text_ := ", ".join(
+            str(chapter) for chapter in book.chapter_list[-8:]
+        )
+    )
+    chapter_text = ""
+    for chapter in book.chapter_list[:-8]:
+        chapter_len += len(text := f"{chapter}, ")
+        if chapter_len > 4096:
+            chapter_text += " ..., "
+            break
+        chapter_text += text
+
+    return Embed(
+        title=f"{book.title}章節列表",
+        description=chapter_text + chapter_text_
+    )
+
+
 class BookCog(BaseCog):
     def __init__(self, bot: Bot) -> None:
         super().__init__(bot)
@@ -226,82 +279,66 @@ class BookCog(BaseCog):
                     embed=Embed(title="未知的錯誤")
                 )
 
-        embed = Embed(
-            title=book.title,
-            description=f"https://czbooks.net/n/{code}\n- 作者: {book.author}\n- 總字數: {f'`{book.words_count}`字' if book.words_count else '`請點擊取得內文以取得字數`'}"  # noqa
-        )
-        embed.add_field(
-            name="書本簡述",
-            value=book.description if len(
-                book.description) < 1024 else book.description[:1020]+" ...",
-            inline=False
-        )
-
-        hashtag_text = ""
-        hashtag = book.hashtags[-1]
-        hashtag_len = len(
-            last_hashtag := f"[{hashtag.text}]({hashtag.link})"
-        )
-        for hashtag in book.hashtags[:-1]:
-            hashtag_len += len(text := f"[{hashtag.text}]({hashtag.link}), ")
-            if hashtag_len > 1018:
-                hashtag_text += " ..., "
-                break
-            hashtag_text += text
-        hashtag_text += last_hashtag
-        embed.add_field(name="標籤", value=hashtag_text, inline=False)
-
-        chapter_text = ""
-        chapter = book.chapter_list[-1]
-        chapter_len = len(
-            last_chapter := f"[{chapter.text}]({chapter.link})"
-        )
-        for chapter in book.chapter_list[:-1]:
-            chapter_len += len(text := f"[{chapter.text}]({chapter.link}), ")
-            if chapter_len > 1018:
-                chapter_text += " ..., "
-                break
-            chapter_text += text
-        chapter_text += last_chapter
-        embed.add_field(
-            name=f"章節列表(共{len(book.chapter_list)}章)", value=chapter_text,
-            inline=False,
-        )
-
-        if book.thumbnail:
-            embed.set_thumbnail(url=book.thumbnail)
-
-        await ctx.respond(embed=embed, view=GetContentView(self.bot))
+        await ctx.respond(embed=overview_embed(book), view=InfoView(self.bot))
 
     @discord.Cog.listener()
     async def on_ready(self):
-        self.bot.add_view(GetContentView(self.bot))
+        self.bot.add_view(InfoView(self.bot))
 
 
-class GetContentView(View):
+class InfoView(View):
     def __init__(self, bot: Bot):
         super().__init__(timeout=None)
         self.bot = bot
 
-        (
-            get_content_button := Button(
-                custom_id="get_content_button",
-                label="取得內文",
-            )
-        ).callback = self.get_content_button_callback
+        self.overview_button = Button(
+            custom_id="overview_button",
+            label="書本總覽",
+            row=0,
+            disabled=True
+        )
+        self.overview_button.callback = self.overview_button_callback
+        self.add_item(self.overview_button)
 
-        self.add_item(get_content_button)
+        self.chapter_button = Button(
+            custom_id="chapter_button",
+            label="章節列表",
+            row=0,
+        )
+        self.chapter_button.callback = self.chapter_button_callback
+        self.add_item(self.chapter_button)
 
-        self.disable_get_content_button = Button(
+        self.get_content_button = Button(
             custom_id="get_content_button",
             label="取得內文",
-            disabled=True,
+            row=1,
+        )
+        self.get_content_button.callback = self.get_content_button_callback
+        self.add_item(self.get_content_button)
+
+    async def overview_button_callback(self, interaction: Interaction):
+        self.overview_button.disabled = True
+        self.chapter_button.disabled = False
+        code = re.search(
+            re_code, interaction.message.embeds[0].description
+        ).group(2)
+        await interaction.response.edit_message(
+            embed=overview_embed(books_cache[code]), view=self
+        )
+
+    async def chapter_button_callback(self, interaction: Interaction):
+        self.overview_button.disabled = False
+        self.chapter_button.disabled = True
+        code = re.search(
+            re_code, interaction.message.embeds[0].description
+        ).group(2)
+        await interaction.response.edit_message(
+            embed=chapter_embed(books_cache[code]), view=self
         )
 
     async def get_content_button_callback(self, interaction: Interaction):
-        await interaction.message.edit(
-            view=View(self.disable_get_content_button)
-        )
+        self.get_content_button.disabled = True
+        await interaction.message.edit(view=self)
 
         code = re.search(
             re_code, interaction.message.embeds[0].description
