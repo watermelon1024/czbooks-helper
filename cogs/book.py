@@ -116,6 +116,12 @@ class Czbooks:
         add_cache(self)
 
 
+def get_code(s: str) -> str:
+    if match := re.search(re_code, s):
+        return match.group(2)
+    return None
+
+
 async def get_book(code: str) -> Czbooks:
     soup = await get_html(f"https://czbooks.net/n/{code}")
     detail_div = soup.find("div", class_="novel-detail")
@@ -231,15 +237,15 @@ def overview_embed(book: Czbooks) -> Embed:
 
 def chapter_embed(book: Czbooks) -> Embed:
     chapter_len = len(
-        chapter_text_ := ", ".join(
+        chapter_text_ := "、".join(
             str(chapter) for chapter in book.chapter_list[-8:]
         )
     )
     chapter_text = ""
     for chapter in book.chapter_list[:-8]:
-        chapter_len += len(text := f"{chapter}, ")
+        chapter_len += len(text := f"{chapter}、")
         if chapter_len > 4096:
-            chapter_text += " ..., "
+            chapter_text += "⋯⋯、"
             break
         chapter_text += text
 
@@ -265,20 +271,20 @@ class BookCog(BaseCog):
     )
     async def info(self, ctx: ApplicationContext, link: str):
         print(f"{ctx.author} used /info link: {link}")
-        if match := re.search(re_code, link):
-            code = match.group(2)
-        else:
+        if not (code := get_code(link)):
             code = link
         book = books_cache.get(code)
-        if not book:
-            try:
-                book = await get_book(code)
-            except NotFoundError:
-                return await ctx.respond(
-                    embed=Embed(title="未知的書本", color=discord.Color.red())
-                )
-
-        await ctx.respond(embed=overview_embed(book), view=InfoView(self.bot))
+        if book:
+            await ctx.respond(
+                embed=overview_embed(book),
+                view=InfoView(self.bot)
+            )
+        try:
+            book = await get_book(code)
+        except NotFoundError:
+            return await ctx.respond(
+                embed=Embed(title="未知的書本", color=discord.Color.red())
+            )
 
     @info.error
     async def on_info_error(self, ctx: ApplicationContext, error):
@@ -325,9 +331,7 @@ class InfoView(View):
     async def overview_button_callback(self, interaction: Interaction):
         self.overview_button.disabled = True
         self.chapter_button.disabled = False
-        code = re.search(
-            re_code, interaction.message.embeds[0].description
-        ).group(2)
+        code = get_code(interaction.message.embeds[0].description)
         await interaction.response.edit_message(
             embed=overview_embed(books_cache[code]), view=self
         )
@@ -335,9 +339,7 @@ class InfoView(View):
     async def chapter_button_callback(self, interaction: Interaction):
         self.overview_button.disabled = False
         self.chapter_button.disabled = True
-        code = re.search(
-            re_code, interaction.message.embeds[0].description
-        ).group(2)
+        code = get_code(interaction.message.embeds[0].description)
         await interaction.response.edit_message(
             embed=chapter_embed(books_cache[code]), view=self
         )
@@ -346,9 +348,7 @@ class InfoView(View):
         self.get_content_button.disabled = True
         await interaction.message.edit(view=self)
 
-        code = re.search(
-            re_code, interaction.message.embeds[0].description
-        ).group(2)
+        code = get_code(interaction.message.embeds[0].description)
         book = books_cache.get(code)
 
         content_msg = await interaction.response.send_message(
