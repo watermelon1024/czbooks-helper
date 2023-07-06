@@ -148,11 +148,16 @@ class InfoView(View):
         self.chapter_button.disabled = False
         self.comment_button.disabled = True
         code = get_code(interaction.message.embeds[0].description)
-        await books_cache[code].update_comment()
+        book = books_cache[code]
         await interaction.response.edit_message(
-            embed=books_cache[code].comments_embed(),
+            embed=Embed(
+                title=f"{book.title}評論列表",
+                description="讀取中，請稍後...",
+            ),
             view=self
         )
+        await book.update_comment()
+        await interaction.message.edit(embed=book.comments_embed())
 
     async def get_content_button_callback(self, interaction: Interaction):
         self.get_content_button.disabled = (
