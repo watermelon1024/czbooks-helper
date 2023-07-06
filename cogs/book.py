@@ -49,16 +49,14 @@ class BookCog(BaseCog):
     )
     async def info(self, ctx: ApplicationContext, link: str):
         print(f"{ctx.author} used /info link: {link}")
-        if not (code := get_code(link)):
-            code = link
-        book = books_cache.get(code)
-        if book:
-            await ctx.respond(
+        code = get_code(link) or link
+        try:
+            book = books_cache.get(code) or await get_book(code)
+            books_cache[code] = book
+            return await ctx.respond(
                 embed=book.overview_embed(),
                 view=InfoView(self.bot)
             )
-        try:
-            book = await get_book(code)
         except NotFoundError:
             return await ctx.respond(
                 embed=Embed(title="未知的書本", color=discord.Color.red())

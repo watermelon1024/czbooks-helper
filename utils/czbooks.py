@@ -162,7 +162,7 @@ class Czbooks:
         )
 
 
-def get_code(s: str) -> str:
+def get_code(s: str) -> str | None:
     if match := re.search(re_code, s):
         return match.group(2)
     return None
