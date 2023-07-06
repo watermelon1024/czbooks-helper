@@ -114,6 +114,9 @@ class InfoView(View):
         )
 
     async def chapter_button_callback(self, interaction: Interaction):
+        self.get_content_button.disabled = (
+            interaction.message.components[-1].children[0].disabled
+        )
         self.overview_button.disabled = False
         self.chapter_button.disabled = True
         code = get_code(interaction.message.embeds[0].description)
@@ -123,6 +126,9 @@ class InfoView(View):
         )
 
     async def get_content_button_callback(self, interaction: Interaction):
+        self.get_content_button.disabled = (
+            interaction.message.components[-1].children[0].disabled
+        )
         self.get_content_button.disabled = True
         await interaction.message.edit(view=self)
 

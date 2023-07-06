@@ -22,7 +22,7 @@ class NotFoundError(Exception):
 
 
 def progress_bar(
-    current: int, total: int, bar_length: int = 25,
+    current: int, total: int, bar_length: int = 27,
 ) -> tuple[float, str]:
     percentage = current / total
     filled_length = int(bar_length * percentage)
