@@ -29,6 +29,11 @@ def progress_bar(
     return percentage, f"[{'='*filled_length}{' '*(bar_length-filled_length)}]"
 
 
+async def get(link: str) -> str:
+    async with aiohttp.request("GET", link) as response:
+        return await response.text()
+
+
 async def get_html(link: str) -> BeautifulSoup:
     async with aiohttp.request("GET", link) as response:
         if response.status == 404:
@@ -46,6 +51,16 @@ class HyperLink:
         return f"[{self.text}]({self.link})"
 
 
+class Comment:
+    def __init__(
+        self,
+        author: str, message: str, date: int
+    ) -> None:
+        self.author = author
+        self.message = message
+        self.date = date
+
+
 class Czbooks:
     def __init__(
         self,
@@ -58,6 +73,7 @@ class Czbooks:
         words_count: int,
         hashtags: list[HyperLink],
         chapter_list: list[HyperLink],
+        comments: list[Comment],
     ) -> None:
         self.code = code
         self.title = title
@@ -68,6 +84,7 @@ class Czbooks:
         self.words_count = words_count
         self.hashtags = hashtags
         self.chapter_list = chapter_list
+        self.comments = comments
 
     async def get_content(self, msg: Interaction):
         self.content = f"連結: https://czbooks.net/n/{self.code}"
@@ -109,6 +126,31 @@ class Czbooks:
 
         self.content_cache = True
         edit_data(self)
+
+    async def update_comment(self):
+        comments = []
+        page = 0
+        last_id = ""
+        while True:
+            page += 1
+            try:
+                resp = await get(f"https://api.czbooks.net/web/comment/list?novelId={self.code}&page={page}&cleanCache=true")  # noqa
+                items = json.loads(resp)["data"]["items"]
+                if len(items) == 0 or last_id == items[0]["id"]:
+                    break
+                last_id = items[0]["id"]
+                comments += [
+                    Comment(
+                        comment["nickname"],
+                        comment["message"],
+                        comment["date"],
+                    ) for comment in items
+                ]
+            except Exception as e:
+                print(f"ERROR GET COMMENTS: {e}")
+                pass
+
+        self.comments = comments
 
     def overview_embed(self) -> Embed:
         embed = Embed(
@@ -161,6 +203,23 @@ class Czbooks:
             description=chapter_text + chapter_text_
         )
 
+    def comments_embed(self) -> Embed:
+        embed = Embed(
+            title=f"{self.title}評論列表",
+            description=f"https://czbooks.net/n/{self.code}"
+        )
+        for comment in self.comments:
+            embed.add_field(
+                name=comment.author,
+                value=f"```{comment.message}```",
+                inline=False
+            )
+            if len(embed) > 6000:
+                embed.remove_field(-1)
+                break
+
+        return embed
+
 
 def get_code(s: str) -> str | None:
     if match := re.search(re_code, s):
@@ -193,12 +252,12 @@ async def get_book(code: str) -> Czbooks:
         ).find_all("a")
     ]
 
-    edit_data(
-        book := Czbooks(
-            code, title, description, thumbnail, author, False, 0,
-            hashtags, chapter_lists,
-        )
+    book = Czbooks(
+        code, title, description, thumbnail, author, False, 0,
+        hashtags, chapter_lists, []
     )
+    await book.update_comment()
+    edit_data(book)
 
     return book
 
@@ -225,6 +284,13 @@ def edit_data(book: Czbooks):
                     "text": chapter.text,
                     "link": chapter.link
                 } for chapter in book.chapter_list
+            ],
+            "comments": [
+                {
+                    "author": comment.author,
+                    "message": comment.message,
+                    "date": comment.date
+                } for comment in book.comments
             ]
         }
         file.seek(0, 0)

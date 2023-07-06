@@ -11,6 +11,7 @@ from bot import BaseCog
 from utils.czbooks import (
     Czbooks,
     HyperLink,
+    Comment,
     get_code,
     get_book,
     NotFoundError,
@@ -22,12 +23,16 @@ with open("./data/books.json", "r", encoding="utf-8") as file:
         code: Czbooks(
             *list(detail.values())[:7],
             [
-                HyperLink(hashtag["text"], hashtag["link"])
+                HyperLink(*hashtag.values())
                 for hashtag in detail["hashtags"]
             ],
             [
-                HyperLink(chapter["text"], chapter["link"])
+                HyperLink(*chapter.values())
                 for chapter in detail["chapters"]
+            ],
+            [
+                Comment(*comment.values())
+                for comment in detail["comments"]
             ]
         ) for code, detail in data.items()
     }
@@ -96,6 +101,14 @@ class InfoView(View):
         self.chapter_button.callback = self.chapter_button_callback
         self.add_item(self.chapter_button)
 
+        self.comment_button = Button(
+            custom_id="comment_button",
+            label="觀看評論",
+            row=0,
+        )
+        self.comment_button.callback = self.comment_button_callback
+        self.add_item(self.comment_button)
+
         self.get_content_button = Button(
             custom_id="get_content_button",
             label="取得內文",
@@ -107,6 +120,7 @@ class InfoView(View):
     async def overview_button_callback(self, interaction: Interaction):
         self.overview_button.disabled = True
         self.chapter_button.disabled = False
+        self.comment_button.disabled = False
         code = get_code(interaction.message.embeds[0].description)
         await interaction.response.edit_message(
             embed=books_cache[code].overview_embed(),
@@ -119,9 +133,24 @@ class InfoView(View):
         )
         self.overview_button.disabled = False
         self.chapter_button.disabled = True
+        self.comment_button.disabled = False
         code = get_code(interaction.message.embeds[0].description)
         await interaction.response.edit_message(
             embed=books_cache[code].chapter_embed(),
+            view=self
+        )
+
+    async def comment_button_callback(self, interaction: Interaction):
+        self.get_content_button.disabled = (
+            interaction.message.components[-1].children[0].disabled
+        )
+        self.overview_button.disabled = False
+        self.chapter_button.disabled = False
+        self.comment_button.disabled = True
+        code = get_code(interaction.message.embeds[0].description)
+        await books_cache[code].update_comment()
+        await interaction.response.edit_message(
+            embed=books_cache[code].comments_embed(),
             view=self
         )
 
