@@ -193,7 +193,7 @@ class Czbooks:
         chapter_text = ""
         for chapter in self.chapter_list[:-8]:
             chapter_len += len(text := f"{chapter}、")
-            if chapter_len > 4096:
+            if chapter_len > 4094:
                 chapter_text += "⋯⋯、"
                 break
             chapter_text += text
@@ -256,7 +256,6 @@ async def get_book(code: str) -> Czbooks:
         code, title, description, thumbnail, author, False, 0,
         hashtags, chapter_lists, []
     )
-    await book.update_comment()
     edit_data(book)
 
     return book

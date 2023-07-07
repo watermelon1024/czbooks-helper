@@ -54,16 +54,17 @@ class BookCog(BaseCog):
     )
     async def info(self, ctx: ApplicationContext, link: str):
         print(f"{ctx.author} used /info link: {link}")
+        msg = await ctx.respond(embed=Embed(title="資料擷取中，請稍後..."))
         code = get_code(link) or link
         try:
             book = books_cache.get(code) or await get_book(code)
             books_cache[code] = book
-            return await ctx.respond(
+            return await msg.edit_original_response(
                 embed=book.overview_embed(),
                 view=InfoView(self.bot)
             )
         except NotFoundError:
-            return await ctx.respond(
+            return await msg.edit_original_response(
                 embed=Embed(title="未知的書本", color=discord.Color.red())
             )
 
@@ -152,7 +153,7 @@ class InfoView(View):
         await interaction.response.edit_message(
             embed=Embed(
                 title=f"{book.title}評論列表",
-                description="讀取中，請稍後...",
+                description="資料擷取中，請稍後...",
             ),
             view=self
         )
