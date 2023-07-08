@@ -126,7 +126,7 @@ class InfoView(View):
         self.get_content_button.disabled = (
             interaction.message.components[-1].children[0].disabled
         )
-        code = get_code(interaction.message.embeds[0].description)
+        code = get_code(interaction.message.embeds[0].url)
         await interaction.response.edit_message(
             embed=books_cache[code].overview_embed(),
             view=self
@@ -139,7 +139,7 @@ class InfoView(View):
         self.get_content_button.disabled = (
             interaction.message.components[-1].children[0].disabled
         )
-        code = get_code(interaction.message.embeds[0].description)
+        code = get_code(interaction.message.embeds[0].url)
         await interaction.response.edit_message(
             embed=books_cache[code].chapter_embed(),
             view=self
@@ -152,7 +152,7 @@ class InfoView(View):
         self.get_content_button.disabled = (
             interaction.message.components[-1].children[0].disabled
         )
-        code = get_code(interaction.message.embeds[0].description)
+        code = get_code(interaction.message.embeds[0].url)
         book = books_cache[code]
         await interaction.response.edit_message(
             embed=Embed(
@@ -176,7 +176,7 @@ class InfoView(View):
         self.get_content_button.disabled = True
         await interaction.message.edit(view=self)
 
-        code = get_code(interaction.message.embeds[0].description)
+        code = get_code(interaction.message.embeds[0].url)
         book = books_cache.get(code)
 
         content_msg = await interaction.response.send_message(
@@ -190,9 +190,8 @@ class InfoView(View):
             await book.get_content(content_msg)
             print(f"{book.title} total words: {book.words_count}.")
 
-            original_embed = interaction.message.embeds[0]
-            original_embed.description = f"https://czbooks.net/n/{code}\n- 作者: {book.author}\n- 總字數: `{book.words_count}`字"  # noqa
-            await interaction.message.edit(embed=original_embed)
+            if interaction.message.components[0].children[0].disabled:
+                await interaction.message.edit(embed=book.overview_embed())
 
         await content_msg.edit_original_response(
             content=f"- 書名: {book.title}\n- 總字數: `{book.words_count}`字",

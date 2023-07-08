@@ -156,7 +156,8 @@ class Czbooks:
     def overview_embed(self) -> Embed:
         embed = Embed(
             title=self.title,
-            description=f"https://czbooks.net/n/{self.code}\n- 作者: {self.author}\n- 總字數: {f'`{self.words_count}`字' if self.words_count else '`請點擊取得內文以取得字數`'}"  # noqa
+            description=f"- 作者: {self.author}\n- 總字數: {f'`{self.words_count}`字' if self.words_count else '`請點擊取得內文以取得字數`'}",  # noqa
+            url=f"https://czbooks.net/n/{self.code}"
         )
         embed.add_field(
             name="書本簡述",
@@ -201,13 +202,14 @@ class Czbooks:
 
         return Embed(
             title=f"{self.title}章節列表",
-            description=chapter_text + chapter_text_
+            description=chapter_text + chapter_text_,
+            url=f"https://czbooks.net/n/{self.code}"
         )
 
     def comments_embed(self) -> Embed:
         embed = Embed(
             title=f"{self.title}評論列表",
-            description=f"https://czbooks.net/n/{self.code}"
+            url=f"https://czbooks.net/n/{self.code}"
         )
         for comment in self.comments:
             embed.add_field(
