@@ -85,6 +85,7 @@ class Czbooks:
         self.hashtags = hashtags
         self.chapter_list = chapter_list
         self.comments = comments
+        self.comment_last_update: float = None
 
     async def get_content(self, msg: Interaction):
         self.content = f"連結: https://czbooks.net/n/{self.code}"

@@ -1,6 +1,7 @@
 import json
 
 from pathlib import Path
+from datetime import datetime
 
 import discord
 
@@ -122,6 +123,9 @@ class InfoView(View):
         self.overview_button.disabled = True
         self.chapter_button.disabled = False
         self.comment_button.disabled = False
+        self.get_content_button.disabled = (
+            interaction.message.components[-1].children[0].disabled
+        )
         code = get_code(interaction.message.embeds[0].description)
         await interaction.response.edit_message(
             embed=books_cache[code].overview_embed(),
@@ -129,12 +133,12 @@ class InfoView(View):
         )
 
     async def chapter_button_callback(self, interaction: Interaction):
-        self.get_content_button.disabled = (
-            interaction.message.components[-1].children[0].disabled
-        )
         self.overview_button.disabled = False
         self.chapter_button.disabled = True
         self.comment_button.disabled = False
+        self.get_content_button.disabled = (
+            interaction.message.components[-1].children[0].disabled
+        )
         code = get_code(interaction.message.embeds[0].description)
         await interaction.response.edit_message(
             embed=books_cache[code].chapter_embed(),
@@ -142,12 +146,12 @@ class InfoView(View):
         )
 
     async def comment_button_callback(self, interaction: Interaction):
-        self.get_content_button.disabled = (
-            interaction.message.components[-1].children[0].disabled
-        )
         self.overview_button.disabled = False
         self.chapter_button.disabled = False
         self.comment_button.disabled = True
+        self.get_content_button.disabled = (
+            interaction.message.components[-1].children[0].disabled
+        )
         code = get_code(interaction.message.embeds[0].description)
         book = books_cache[code]
         await interaction.response.edit_message(
@@ -157,7 +161,12 @@ class InfoView(View):
             ),
             view=self
         )
-        await book.update_comment()
+        now_time = datetime.now().timestamp()
+        if (not book.comment_last_update) or (
+            now_time - book.comment_last_update > 600
+        ):
+            book.comment_last_update = now_time
+            await book.update_comment()
         await interaction.message.edit(embed=book.comments_embed())
 
     async def get_content_button_callback(self, interaction: Interaction):
