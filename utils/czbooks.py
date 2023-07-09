@@ -88,7 +88,7 @@ class Czbooks:
         self.comment_last_update: float = None
 
     async def get_content(self, msg: Interaction):
-        self.content = f"連結: https://czbooks.net/n/{self.code}"
+        self.content = f"{self.title}\n連結: https://czbooks.net/n/{self.code}\n作者:{self.author}"  # noqa
         self.words_count = 0
         chapter_count = len(self.chapter_list)
         # 逐章爬取內容
@@ -103,10 +103,14 @@ class Czbooks:
             ch_name = soup.find("div", class_="name")
             # 尋找內文
             div_content = ch_name.find_next("div", class_="content")
-            self.content += f"\n\n{'='*32} {ch_name.text} {'='*32}\n\n"
+            self.content += f"\n\n{'='*32} {ch_name.text} {'='*32}\n"
+            ch_words_count = len(re.findall(chinese_char, div_content.text))
+            if ch_words_count <= 1024:
+                self.content += "(本章可能非內文)\n\n"
+            else:
+                self.words_count += ch_words_count
+                self.content += "\n"
             self.content += div_content.text.strip()
-            # 計算字數
-            self.words_count += len(re.findall(chinese_char, div_content.text))
 
             # 計算進度
             now_time = datetime.now().timestamp()
