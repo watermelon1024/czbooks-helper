@@ -156,6 +156,7 @@ class Czbooks:
                 pass
 
         self.comments = comments
+        edit_data(self)
 
     def overview_embed(self) -> Embed:
         embed = Embed(
@@ -228,6 +229,27 @@ class Czbooks:
         return embed
 
 
+with open("./data/books.json", "r", encoding="utf-8") as file:
+    data: dict[str, dict] = json.load(file)
+    books_cache = {
+        code: Czbooks(
+            *list(detail.values())[:7],
+            [
+                HyperLink(*hashtag.values())
+                for hashtag in detail["hashtags"]
+            ],
+            [
+                HyperLink(*chapter.values())
+                for chapter in detail["chapters"]
+            ],
+            [
+                Comment(*comment.values())
+                for comment in detail["comments"]
+            ]
+        ) for code, detail in data.items()
+    }
+
+
 def get_code(s: str) -> str | None:
     if match := re.search(re_code, s):
         return match.group(2)
@@ -235,6 +257,8 @@ def get_code(s: str) -> str | None:
 
 
 async def get_book(code: str) -> Czbooks:
+    if book := books_cache.get(code):
+        return book
     soup = await get_html(f"https://czbooks.net/n/{code}")
     detail_div = soup.find("div", class_="novel-detail")
     # basic info
@@ -263,6 +287,7 @@ async def get_book(code: str) -> Czbooks:
         code, title, description, thumbnail, author, False, 0,
         hashtags, chapter_lists, []
     )
+    books_cache[code] = book
     edit_data(book)
 
     return book
@@ -313,8 +338,9 @@ by_dict = {
 
 
 async def search(keyword: str, by: str, page: int = 0) -> list[HyperLink]:
-
-    soup = await get_html(f"https://czbooks.net/{by_dict[by]}/{keyword}")
+    if not (by_ := by_dict.get(by)):
+        raise ValueError(f"Unknown value \"{by}\" of by arg")
+    soup = await get_html(f"https://czbooks.net/{by_}/{keyword}")
     novel_list_ul = soup.find(
         "ul", class_="nav novel-list style-default"
     ).find_all("li", class_="novel-item-wrapper")

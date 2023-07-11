@@ -1,23 +1,15 @@
-import json
-
-from pathlib import Path
-from datetime import datetime
-
 import discord
 
 from discord import Embed, ApplicationContext, Interaction, Bot, OptionChoice
-from discord.ui import View, Button
+from discord.ui import View, Select
 
 from bot import BaseCog
 from utils.czbooks import (
-    Czbooks,
     HyperLink,
-    Comment,
-    get_code,
     get_book,
     search,
-    NotFoundError,
 )
+from cogs.info import InfoView
 
 
 class SearchCog(BaseCog):
@@ -60,11 +52,20 @@ class SearchCog(BaseCog):
                         f"{index}. [{novel.text}](https://czbooks.net/n/{novel.link})"  # noqa
                         for index, novel in enumerate(result[:20], start=1)
                     )
-                )
+                ),
+                view=SearchView(self.bot, result[:20])
             )
 
         return await msg.edit_original_response(
             embed=Embed(title="無搜尋結果", color=discord.Color.red())
+        )
+
+    @simple_search.error
+    async def on_simple_search_error(self, ctx: ApplicationContext, error):
+        print(error)
+        await ctx.respond(
+            embed=Embed(title="發生未知的錯誤", color=discord.Color.red()),
+            ephemeral=True
         )
 
     @search_group.command(
@@ -146,135 +147,46 @@ class SearchCog(BaseCog):
             embed=Embed(title="無搜尋結果", color=discord.Color.red())
         )
 
-    # @search.error
-    # async def on_info_error(self, ctx: ApplicationContext, error):
-    #     print(error)
-    #     await ctx.respond(
-    #         embed=Embed(title="發生未知的錯誤", color=discord.Color.red()),
-    #         ephemeral=True
-    #     )
+    @advanced_search.error
+    async def on_advanced_search_error(self, ctx: ApplicationContext, error):
+        print(error)
+        await ctx.respond(
+            embed=Embed(title="發生未知的錯誤", color=discord.Color.red()),
+            ephemeral=True
+        )
 
     @discord.Cog.listener()
     async def on_ready(self):
-        self.bot.add_view(InfoView(self.bot))
+        self.bot.add_view(SearchView(self.bot))
 
 
-class InfoView(View):
-    def __init__(self, bot: Bot):
+class SearchView(View):
+    def __init__(self, bot: Bot, options: list[HyperLink] = []):
         super().__init__(timeout=None)
         self.bot = bot
 
-        self.overview_button = Button(
-            custom_id="overview_button",
-            label="書本總覽",
-            row=0,
-            disabled=True
-        )
-        self.overview_button.callback = self.overview_button_callback
-        self.add_item(self.overview_button)
-
-        self.chapter_button = Button(
-            custom_id="chapter_button",
-            label="章節列表",
+        self.select = Select(
+            custom_id="search_select",
+            placeholder="請選擇",
+            options=[
+                discord.SelectOption(
+                    label=novel.text, value=novel.link
+                ) for novel in options
+            ],
             row=0,
         )
-        self.chapter_button.callback = self.chapter_button_callback
-        self.add_item(self.chapter_button)
+        self.select.callback = self.select_callback
+        self.add_item(self.select)
 
-        self.comment_button = Button(
-            custom_id="comment_button",
-            label="觀看評論",
-            row=0,
-        )
-        self.comment_button.callback = self.comment_button_callback
-        self.add_item(self.comment_button)
-
-        self.get_content_button = Button(
-            custom_id="get_content_button",
-            label="取得內文",
-            row=1,
-        )
-        self.get_content_button.callback = self.get_content_button_callback
-        self.add_item(self.get_content_button)
-
-    async def overview_button_callback(self, interaction: Interaction):
-        self.overview_button.disabled = True
-        self.chapter_button.disabled = False
-        self.comment_button.disabled = False
-        self.get_content_button.disabled = (
-            interaction.message.components[-1].children[0].disabled
-        )
-        code = get_code(interaction.message.embeds[0].url)
-        await interaction.response.edit_message(
-            embed=books_cache[code].overview_embed(),
-            view=self
+    async def select_callback(self, interaction: Interaction):
+        msg = await interaction.response.send_message(
+            embed=Embed(title="資料擷取中，請稍後...")
         )
 
-    async def chapter_button_callback(self, interaction: Interaction):
-        self.overview_button.disabled = False
-        self.chapter_button.disabled = True
-        self.comment_button.disabled = False
-        self.get_content_button.disabled = (
-            interaction.message.components[-1].children[0].disabled
-        )
-        code = get_code(interaction.message.embeds[0].url)
-        await interaction.response.edit_message(
-            embed=books_cache[code].chapter_embed(),
-            view=self
-        )
-
-    async def comment_button_callback(self, interaction: Interaction):
-        self.overview_button.disabled = False
-        self.chapter_button.disabled = False
-        self.comment_button.disabled = True
-        self.get_content_button.disabled = (
-            interaction.message.components[-1].children[0].disabled
-        )
-        code = get_code(interaction.message.embeds[0].url)
-        book = books_cache[code]
-        await interaction.response.edit_message(
-            embed=Embed(
-                title=f"{book.title}評論列表",
-                description="資料擷取中，請稍後...",
-            ),
-            view=self
-        )
-        now_time = datetime.now().timestamp()
-        if (not book.comment_last_update) or (
-            now_time - book.comment_last_update > 600
-        ):
-            book.comment_last_update = now_time
-            await book.update_comment()
-        await interaction.message.edit(embed=book.comments_embed())
-
-    async def get_content_button_callback(self, interaction: Interaction):
-        self.get_content_button.disabled = (
-            interaction.message.components[-1].children[0].disabled
-        )
-        self.get_content_button.disabled = True
-        await interaction.message.edit(view=self)
-
-        code = get_code(interaction.message.embeds[0].url)
-        book = books_cache.get(code)
-
-        content_msg = await interaction.response.send_message(
-            embed=Embed(
-                title="擷取內文中...",
-                description="正在計算進度..."
-            )
-        )
-        if not book.content_cache:
-            print(f"{interaction.user} gets {book.title}'s content")
-            await book.get_content(content_msg)
-            print(f"{book.title} total words: {book.words_count}.")
-
-            if interaction.message.components[0].children[0].disabled:
-                await interaction.message.edit(embed=book.overview_embed())
-
-        await content_msg.edit_original_response(
-            content=f"- 書名: {book.title}\n- 總字數: `{book.words_count}`字",
-            embed=None,
-            file=discord.File(Path(f"./data/{book.code}.txt")),
+        book = await get_book(interaction.data["values"][0])
+        await msg.edit_original_response(
+            embed=book.overview_embed(),
+            view=InfoView(self.bot)
         )
 
 

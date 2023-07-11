@@ -1,5 +1,3 @@
-import json
-
 from pathlib import Path
 from datetime import datetime
 
@@ -10,33 +8,10 @@ from discord.ui import View, Button
 
 from bot import BaseCog
 from utils.czbooks import (
-    Czbooks,
-    HyperLink,
-    Comment,
     get_code,
     get_book,
     NotFoundError,
 )
-
-with open("./data/books.json", "r", encoding="utf-8") as file:
-    data: dict[str, dict] = json.load(file)
-    books_cache = {
-        code: Czbooks(
-            *list(detail.values())[:7],
-            [
-                HyperLink(*hashtag.values())
-                for hashtag in detail["hashtags"]
-            ],
-            [
-                HyperLink(*chapter.values())
-                for chapter in detail["chapters"]
-            ],
-            [
-                Comment(*comment.values())
-                for comment in detail["comments"]
-            ]
-        ) for code, detail in data.items()
-    }
 
 
 class InfoCog(BaseCog):
@@ -58,8 +33,7 @@ class InfoCog(BaseCog):
         msg = await ctx.respond(embed=Embed(title="資料擷取中，請稍後..."))
         code = get_code(link) or link
         try:
-            book = books_cache.get(code) or await get_book(code)
-            books_cache[code] = book
+            book = await get_book(code)
             return await msg.edit_original_response(
                 embed=book.overview_embed(),
                 view=InfoView(self.bot)
@@ -128,7 +102,7 @@ class InfoView(View):
         )
         code = get_code(interaction.message.embeds[0].url)
         await interaction.response.edit_message(
-            embed=books_cache[code].overview_embed(),
+            embed=(await get_book(code)).overview_embed(),
             view=self
         )
 
@@ -141,7 +115,7 @@ class InfoView(View):
         )
         code = get_code(interaction.message.embeds[0].url)
         await interaction.response.edit_message(
-            embed=books_cache[code].chapter_embed(),
+            embed=(await get_book(code)).chapter_embed(),
             view=self
         )
 
@@ -153,7 +127,7 @@ class InfoView(View):
             interaction.message.components[-1].children[0].disabled
         )
         code = get_code(interaction.message.embeds[0].url)
-        book = books_cache[code]
+        book = await get_book(code)
         await interaction.response.edit_message(
             embed=Embed(
                 title=f"{book.title}評論列表",
@@ -177,7 +151,7 @@ class InfoView(View):
         await interaction.message.edit(view=self)
 
         code = get_code(interaction.message.embeds[0].url)
-        book = books_cache.get(code)
+        book = await get_book(code)
 
         content_msg = await interaction.response.send_message(
             embed=Embed(
