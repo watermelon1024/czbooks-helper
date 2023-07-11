@@ -5,7 +5,7 @@ from datetime import datetime
 
 import discord
 
-from discord import Embed, ApplicationContext, Interaction, Bot
+from discord import Embed, ApplicationContext, Interaction, Bot, OptionChoice
 from discord.ui import View, Button
 
 from bot import BaseCog
@@ -15,66 +15,144 @@ from utils.czbooks import (
     Comment,
     get_code,
     get_book,
+    search,
     NotFoundError,
 )
 
-with open("./data/books.json", "r", encoding="utf-8") as file:
-    data: dict[str, dict] = json.load(file)
-    books_cache = {
-        code: Czbooks(
-            *list(detail.values())[:7],
-            [
-                HyperLink(*hashtag.values())
-                for hashtag in detail["hashtags"]
-            ],
-            [
-                HyperLink(*chapter.values())
-                for chapter in detail["chapters"]
-            ],
-            [
-                Comment(*comment.values())
-                for comment in detail["comments"]
-            ]
-        ) for code, detail in data.items()
-    }
 
-
-class BookCog(BaseCog):
+class SearchCog(BaseCog):
     def __init__(self, bot: Bot) -> None:
         super().__init__(bot)
 
-    @discord.slash_command(
+    search_group = discord.SlashCommandGroup("search")
+
+    @search_group.command(
         guild_only=True,
-        name="info",
-        description="取得書本資訊",
+        name="simple",
+        description="搜尋小說(基本搜尋)",
     )
     @discord.option(
-        "link",
+        "keyword",
         str,
-        description="欲查詢的書本連結",
+        description="關鍵字",
     )
-    async def info(self, ctx: ApplicationContext, link: str):
-        print(f"{ctx.author} used /info link: {link}")
-        msg = await ctx.respond(embed=Embed(title="資料擷取中，請稍後..."))
-        code = get_code(link) or link
-        try:
-            book = books_cache.get(code) or await get_book(code)
-            books_cache[code] = book
+    @discord.option(
+        "by",
+        str,
+        description="欲使用的搜尋方式",
+        choices=[
+            OptionChoice("名稱", "name"),
+            OptionChoice("標籤", "hashtag"),
+            OptionChoice("作者", "author"),
+        ],
+    )
+    async def simple_search(
+        self, ctx: ApplicationContext,
+        keyword: str, by: str,
+    ):
+        print(f"{ctx.author} used /search keyword: {keyword} by: {by}")
+        msg = await ctx.respond(embed=Embed(title="搜尋中，請稍後..."))
+        if result := await search(keyword, by):
             return await msg.edit_original_response(
-                embed=book.overview_embed(),
-                view=InfoView(self.bot)
-            )
-        except NotFoundError:
-            return await msg.edit_original_response(
-                embed=Embed(title="未知的書本", color=discord.Color.red())
+                embed=Embed(
+                    title="搜尋結果",
+                    description="\n".join(
+                        f"{index}. [{novel.text}](https://czbooks.net/n/{novel.link})"  # noqa
+                        for index, novel in enumerate(result[:20], start=1)
+                    )
+                )
             )
 
-    @info.error
-    async def on_info_error(self, ctx: ApplicationContext, error):
-        await ctx.respond(
-            embed=Embed(title="發生未知的錯誤", color=discord.Color.red()),
+        return await msg.edit_original_response(
+            embed=Embed(title="無搜尋結果", color=discord.Color.red())
+        )
+
+    @search_group.command(
+        guild_only=True,
+        name="advanced",
+        description="搜尋小說(進階搜尋)",
+    )
+    @discord.option(
+        "name",
+        str,
+        description="使用書本名稱搜尋",
+        required=False,
+    )
+    @discord.option(
+        "hashtag",
+        str,
+        description="使用標籤搜尋(使用,分隔每個標籤)",
+        required=False,
+    )
+    @discord.option(
+        "author",
+        str,
+        description="使用作者名稱搜尋",
+        required=False,
+    )
+    async def advanced_search(
+        self, ctx: ApplicationContext,
+        name: str, hashtag: str, author: str,
+    ):
+        return await ctx.respond(
+            embed=Embed(title="暫不開放", color=discord.Color.red()),
             ephemeral=True
         )
+        print(f"{ctx.author} used /search name: {name} hashtag: {hashtag} author: {author}")  # noqa
+        msg = await ctx.respond(embed=Embed(title="搜尋中，請稍後..."))
+        # search by name: s, hashtag: hashtag, author: a
+        novel_list: list[list[HyperLink]] = []
+        page = 0
+        while True:
+            if name:
+                if name_list := await search(name, "s", page):
+                    novel_list.append(name_list)
+            if hashtag:
+                if hashtag_list := await search(hashtag, "hashtag", page):
+                    novel_list.append(hashtag_list)
+            if author:
+                if author_list := await search(author, "a", page):
+                    novel_list.append(author_list)
+
+            if not novel_list:
+                page += 1
+            else:
+                break
+        if not novel_list:
+            return await msg.edit_original_response(
+                embed=Embed(title="無搜尋結果", color=discord.Color.red())
+            )
+
+        novel_codes = set(novel.link for novel in novel_list[0])
+        for sub_novel_list in novel_list:
+            codes = {item.link for item in sub_novel_list}
+            novel_codes.intersection_update(codes)
+        novel_list_ = [
+            item for item in novel_list[0] if item.link in novel_codes
+        ]
+
+        if novel_list_:
+            return await msg.edit_original_response(
+                embed=Embed(
+                    title="搜尋結果",
+                    description="\n".join(
+                        f"{index}. [{novel.text}](https://czbooks.net/n/{novel.link})"  # noqa
+                        for index, novel in enumerate(novel_list_, start=1)
+                    )
+                )
+            )
+
+        return await msg.edit_original_response(
+            embed=Embed(title="無搜尋結果", color=discord.Color.red())
+        )
+
+    # @search.error
+    # async def on_info_error(self, ctx: ApplicationContext, error):
+    #     print(error)
+    #     await ctx.respond(
+    #         embed=Embed(title="發生未知的錯誤", color=discord.Color.red()),
+    #         ephemeral=True
+    #     )
 
     @discord.Cog.listener()
     async def on_ready(self):
@@ -201,4 +279,4 @@ class InfoView(View):
 
 
 def setup(bot: Bot):
-    bot.add_cog(BookCog(bot))
+    bot.add_cog(SearchCog(bot))

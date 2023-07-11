@@ -302,3 +302,28 @@ def edit_data(book: Czbooks):
         file.seek(0, 0)
         json.dump(data, file, ensure_ascii=False)
         file.truncate()
+
+
+# search by name: s, hashtag: hashtag, author: a
+by_dict = {
+    "name": "s",
+    "hashtag": "hashtag",
+    "author": "a",
+}
+
+
+async def search(keyword: str, by: str, page: int = 0) -> list[HyperLink]:
+
+    soup = await get_html(f"https://czbooks.net/{by_dict[by]}/{keyword}")
+    novel_list_ul = soup.find(
+        "ul", class_="nav novel-list style-default"
+    ).find_all("li", class_="novel-item-wrapper")
+    if not novel_list_ul:
+        return None
+
+    return [
+        HyperLink(
+            novel.find("div", class_="novel-item-title").text.strip(),
+            get_code(novel.find("a").get("href"))
+        ) for novel in novel_list_ul
+    ]
