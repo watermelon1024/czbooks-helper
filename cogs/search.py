@@ -16,12 +16,12 @@ class SearchCog(BaseCog):
     def __init__(self, bot: Bot) -> None:
         super().__init__(bot)
 
-    search_group = discord.SlashCommandGroup("search")
+    search_group = discord.SlashCommandGroup("search", "搜尋小說")
 
     @search_group.command(
         guild_only=True,
         name="simple",
-        description="搜尋小說(基本搜尋)",
+        description="基本搜尋",
     )
     @discord.option(
         "keyword",
@@ -37,6 +37,7 @@ class SearchCog(BaseCog):
             OptionChoice("標籤", "hashtag"),
             OptionChoice("作者", "author"),
         ],
+        default="name",
     )
     async def simple_search(
         self, ctx: ApplicationContext,
@@ -71,7 +72,7 @@ class SearchCog(BaseCog):
     @search_group.command(
         guild_only=True,
         name="advanced",
-        description="搜尋小說(進階搜尋)",
+        description="進階搜尋",
     )
     @discord.option(
         "name",
