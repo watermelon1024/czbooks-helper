@@ -7,6 +7,7 @@ from bot import BaseCog
 from utils.czbooks import (
     HyperLink,
     get_book,
+    fetch_book,
     search,
 )
 from cogs.info import InfoView
@@ -180,11 +181,18 @@ class SearchView(View):
         self.add_item(self.select)
 
     async def select_callback(self, interaction: Interaction):
+        code = interaction.data["values"][0]
+        print(f"{interaction.user} use /info link: {code}")
+
+        if book := get_book(code):
+            return await interaction.response.send_message(
+                embed=book.overview_embed()
+            )
+
         msg = await interaction.response.send_message(
             embed=Embed(title="資料擷取中，請稍後...")
         )
-
-        book = await get_book(interaction.data["values"][0])
+        book = await fetch_book(code)
         await msg.edit_original_response(
             embed=book.overview_embed(),
             view=InfoView(self.bot)

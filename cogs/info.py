@@ -10,6 +10,7 @@ from bot import BaseCog
 from utils.czbooks import (
     get_code,
     get_book,
+    fetch_book,
     NotFoundError,
 )
 
@@ -30,10 +31,15 @@ class InfoCog(BaseCog):
     )
     async def info(self, ctx: ApplicationContext, link: str):
         print(f"{ctx.author} used /info link: {link}")
-        msg = await ctx.respond(embed=Embed(title="資料擷取中，請稍後..."))
         code = get_code(link) or link
+        if book := get_book(code):
+            return await ctx.respond(
+                embed=book.overview_embed(),
+                view=InfoView(self.bot)
+            )
         try:
-            book = await get_book(code)
+            msg = await ctx.respond(embed=Embed(title="資料擷取中，請稍後..."))
+            book = await fetch_book(code)
             return await msg.edit_original_response(
                 embed=book.overview_embed(),
                 view=InfoView(self.bot)
@@ -102,7 +108,7 @@ class InfoView(View):
         )
         code = get_code(interaction.message.embeds[0].url)
         await interaction.response.edit_message(
-            embed=(await get_book(code)).overview_embed(),
+            embed=get_book(code).overview_embed(),
             view=self
         )
 
@@ -115,7 +121,7 @@ class InfoView(View):
         )
         code = get_code(interaction.message.embeds[0].url)
         await interaction.response.edit_message(
-            embed=(await get_book(code)).chapter_embed(),
+            embed=get_book(code).chapter_embed(),
             view=self
         )
 
@@ -126,22 +132,28 @@ class InfoView(View):
         self.get_content_button.disabled = (
             interaction.message.components[-1].children[0].disabled
         )
-        code = get_code(interaction.message.embeds[0].url)
-        book = await get_book(code)
-        await interaction.response.edit_message(
-            embed=Embed(
-                title=f"{book.title}評論列表",
-                description="資料擷取中，請稍後...",
-            ),
-            view=self
-        )
+
+        book = get_book(get_code(interaction.message.embeds[0].url))
+
         now_time = datetime.now().timestamp()
         if (not book.comment_last_update) or (
             now_time - book.comment_last_update > 600
         ):
+            await interaction.response.edit_message(
+                embed=Embed(
+                    title=f"{book.title}評論列表",
+                    description="資料擷取中，請稍後...",
+                ),
+                view=self
+            )
             book.comment_last_update = now_time
             await book.update_comment()
-        await interaction.message.edit(embed=book.comments_embed())
+            return await interaction.message.edit(embed=book.comments_embed())
+
+        await interaction.response.edit_message(
+            embed=book.comments_embed(),
+            view=self
+        )
 
     async def get_content_button_callback(self, interaction: Interaction):
         self.get_content_button.disabled = (
@@ -150,8 +162,7 @@ class InfoView(View):
         self.get_content_button.disabled = True
         await interaction.message.edit(view=self)
 
-        code = get_code(interaction.message.embeds[0].url)
-        book = await get_book(code)
+        book = get_book(get_code(interaction.message.embeds[0].url))
 
         content_msg = await interaction.response.send_message(
             embed=Embed(

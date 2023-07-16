@@ -256,9 +256,11 @@ def get_code(s: str) -> str | None:
     return None
 
 
-async def get_book(code: str) -> Czbooks:
-    if book := books_cache.get(code):
-        return book
+def get_book(code: str) -> Czbooks:
+    return books_cache.get(code)
+
+
+async def fetch_book(code: str) -> Czbooks:
     soup = await get_html(f"https://czbooks.net/n/{code}")
     detail_div = soup.find("div", class_="novel-detail")
     # basic info
@@ -291,6 +293,10 @@ async def get_book(code: str) -> Czbooks:
     edit_data(book)
 
     return book
+
+
+async def get_or_fetch_book(code: str) -> Czbooks:
+    return get_book(code) or await fetch_book(code)
 
 
 def edit_data(book: Czbooks):
