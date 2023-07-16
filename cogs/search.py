@@ -186,7 +186,8 @@ class SearchView(View):
 
         if book := get_book(code):
             return await interaction.response.send_message(
-                embed=book.overview_embed()
+                embed=book.overview_embed(),
+                view=InfoView(self.bot)
             )
 
         msg = await interaction.response.send_message(
