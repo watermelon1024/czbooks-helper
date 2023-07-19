@@ -176,18 +176,20 @@ class Czbooks:
             ),
             inline=False
         )
-
-        hashtag_text = ""
-        hashtag_len = len(
-            last_hashtag := str(self.hashtags[-1])
-        )
-        for hashtag in self.hashtags[:-1]:
-            hashtag_len += len(text := f"{hashtag}, ")
-            if hashtag_len > 1018:
-                hashtag_text += " ..., "
-                break
-            hashtag_text += text
-        hashtag_text += last_hashtag
+        if self.hashtags:
+            hashtag_text = ""
+            hashtag_len = len(
+                last_hashtag := str(self.hashtags[-1])
+            )
+            for hashtag in self.hashtags[:-1]:
+                hashtag_len += len(text := f"{hashtag}, ")
+                if hashtag_len > 1018:
+                    hashtag_text += " ..., "
+                    break
+                hashtag_text += text
+            hashtag_text += last_hashtag
+        else:
+            hashtag_text = "尚無標籤"
         embed.add_field(name="標籤", value=hashtag_text, inline=False)
 
         if self.thumbnail:
