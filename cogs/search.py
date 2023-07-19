@@ -172,8 +172,9 @@ class SearchView(View):
             placeholder="請選擇",
             options=[
                 discord.SelectOption(
-                    label=novel.text, value=novel.link
-                ) for novel in options
+                    label=f"{index}. {novel.text}",
+                    value=novel.link,
+                ) for index, novel in enumerate(options, start=1)
             ],
             row=0,
         )
@@ -182,7 +183,7 @@ class SearchView(View):
 
     async def select_callback(self, interaction: Interaction):
         code = interaction.data["values"][0]
-        print(f"{interaction.user} use /info link: {code}")
+        print(f"{interaction.user} used /info link: {code}")
 
         if book := get_book(code):
             return await interaction.response.send_message(

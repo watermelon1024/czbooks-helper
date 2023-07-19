@@ -20,7 +20,7 @@ bot.load_extension("cogs", recursive=True)
 
 @bot.event
 async def on_ready():
-    print(f"We have logged in as {bot.user}")
+    print(f"Login as {bot.user}")
 
 
 if __name__ == "__main__":

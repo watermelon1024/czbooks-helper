@@ -31,7 +31,8 @@ def progress_bar(
 
 async def get(link: str) -> str:
     async with aiohttp.request("GET", link) as response:
-        return await response.text()
+        text = await response.text()
+    return text
 
 
 async def get_html(link: str) -> BeautifulSoup:
@@ -39,7 +40,7 @@ async def get_html(link: str) -> BeautifulSoup:
         if response.status == 404:
             raise NotFoundError()
         soup = BeautifulSoup(await response.text(), "html.parser")
-        return soup
+    return soup
 
 
 class HyperLink:
@@ -118,11 +119,14 @@ class Czbooks:
             if now_time - last_time > 2:
                 last_time = now_time
                 progress, bar = progress_bar(index, chapter_count)
-                eta = total_diff / progress - total_diff
+                eta = (
+                    f"`{(total_diff / progress - total_diff):.1f}`秒"
+                    if progress > 0.1 else "計算中..."
+                )
                 await msg.edit_original_response(
                     embed=Embed(
                         title="擷取內文中...",
-                        description=f"{progress*100:.1f}% {index}/{chapter_count}章```{bar}```預計剩餘時間: {eta:.1f}秒"  # noqa
+                        description=f"第{index}/{chapter_count}章 {progress*100:.1f}%```{bar}```預計剩餘時間: {eta}"  # noqa
                     )
                 )
 
