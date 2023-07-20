@@ -162,7 +162,7 @@ class InfoView(View):
         if not book.content_cache:
             print(f"{interaction.user} gets {book.title}'s content")
             time_taken = await book.get_content(content_msg)
-            time_taken_display = f"擷取成功，耗時`{time_taken:.1f}秒`"
+            time_taken_display = f"擷取成功，耗時`{time_taken:.1f}`秒\n"
             print(f"{book.title} total words: {book.words_count}.")
 
             if interaction.message.components[0].children[0].disabled:
