@@ -138,7 +138,7 @@ class InfoView(View):
             book.comment_last_update = now_time
             await book.update_comment()
 
-        await interaction.edit_original_response(
+        await interaction.message.edit(
             embed=book.comments_embed(),
             view=self,
         )
