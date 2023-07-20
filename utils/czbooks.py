@@ -88,7 +88,7 @@ class Czbooks:
         self.comments = comments
         self.comment_last_update: float = None
 
-    async def get_content(self, msg: Interaction):
+    async def get_content(self, msg: Interaction) -> float:
         self.content = f"{self.title}\n連結: https://czbooks.net/n/{self.code}\n作者:{self.author}"  # noqa
         self.words_count = 0
         chapter_count = len(self.chapter_list)
@@ -121,7 +121,7 @@ class Czbooks:
                 progress, bar = progress_bar(index, chapter_count)
                 eta = (
                     f"`{(total_diff / progress - total_diff):.1f}`秒"
-                    if progress > 0.1 else "計算中..."
+                    if progress > 0.1 or total_diff > 10 else "計算中..."
                 )
                 await msg.edit_original_response(
                     embed=Embed(
@@ -135,6 +135,8 @@ class Czbooks:
 
         self.content_cache = True
         edit_data(self)
+
+        return total_diff
 
     async def update_comment(self):
         comments = []

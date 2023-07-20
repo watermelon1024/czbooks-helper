@@ -1,3 +1,5 @@
+from typing import Literal
+
 import discord
 
 from discord import Embed, ApplicationContext, Interaction, Bot, OptionChoice
@@ -42,7 +44,8 @@ class SearchCog(BaseCog):
     )
     async def simple_search(
         self, ctx: ApplicationContext,
-        keyword: str, by: str,
+        keyword: str,
+        by: Literal["name", "hashtag", "author"],
     ):
         print(f"{ctx.author} used /search keyword: {keyword} by: {by}")
         msg = await ctx.respond(embed=Embed(title="搜尋中，請稍後..."))

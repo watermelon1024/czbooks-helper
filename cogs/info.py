@@ -172,14 +172,14 @@ class InfoView(View):
         )
         if not book.content_cache:
             print(f"{interaction.user} gets {book.title}'s content")
-            await book.get_content(content_msg)
+            taken_time = await book.get_content(content_msg)
             print(f"{book.title} total words: {book.words_count}.")
 
             if interaction.message.components[0].children[0].disabled:
                 await interaction.message.edit(embed=book.overview_embed())
 
         await content_msg.edit_original_response(
-            content=f"- 書名: {book.title}\n- 總字數: `{book.words_count}`字",
+            content=f"擷取成功，耗時`{taken_time:.1f}秒`- 書名: {book.title}\n- 總字數: `{book.words_count}`字",  # noqa
             embed=None,
             file=discord.File(Path(f"./data/{book.code}.txt")),
         )
