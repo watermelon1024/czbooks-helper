@@ -10,7 +10,7 @@ from bot import BaseCog
 from utils.czbooks import (
     get_code,
     get_book,
-    fetch_book,
+    get_or_fetch_book,
     NotFoundError,
 )
 
@@ -31,29 +31,24 @@ class InfoCog(BaseCog):
     )
     async def info(self, ctx: ApplicationContext, link: str):
         print(f"{ctx.author} used /info link: {link}")
+        await ctx.defer()
         code = get_code(link) or link
-        if book := get_book(code):
-            return await ctx.respond(
-                embed=book.overview_embed(),
-                view=InfoView(self.bot)
-            )
         try:
-            msg = await ctx.respond(embed=Embed(title="資料擷取中，請稍後..."))
-            book = await fetch_book(code)
-            return await msg.edit_original_response(
+            book = await get_or_fetch_book(code)
+            await ctx.respond(
                 embed=book.overview_embed(),
-                view=InfoView(self.bot)
+                view=InfoView(self.bot),
             )
         except NotFoundError:
-            return await msg.edit_original_response(
-                embed=Embed(title="未知的書本", color=discord.Color.red())
+            await ctx.respond(
+                embed=Embed(title="未知的書本", color=discord.Color.red()),
             )
 
     @info.error
     async def on_info_error(self, ctx: ApplicationContext, error):
         await ctx.respond(
             embed=Embed(title="發生未知的錯誤", color=discord.Color.red()),
-            ephemeral=True
+            ephemeral=True,
         )
 
     @discord.Cog.listener()
@@ -70,7 +65,7 @@ class InfoView(View):
             custom_id="overview_button",
             label="書本總覽",
             row=0,
-            disabled=True
+            disabled=True,
         )
         self.overview_button.callback = self.overview_button_callback
         self.add_item(self.overview_button)
@@ -109,7 +104,7 @@ class InfoView(View):
         code = get_code(interaction.message.embeds[0].url)
         await interaction.response.edit_message(
             embed=get_book(code).overview_embed(),
-            view=self
+            view=self,
         )
 
     async def chapter_button_callback(self, interaction: Interaction):
@@ -122,7 +117,7 @@ class InfoView(View):
         code = get_code(interaction.message.embeds[0].url)
         await interaction.response.edit_message(
             embed=get_book(code).chapter_embed(),
-            view=self
+            view=self,
         )
 
     async def comment_button_callback(self, interaction: Interaction):
@@ -139,20 +134,13 @@ class InfoView(View):
         if (not book.comment_last_update) or (
             now_time - book.comment_last_update > 600
         ):
-            await interaction.response.edit_message(
-                embed=Embed(
-                    title=f"{book.title}評論列表",
-                    description="資料擷取中，請稍後...",
-                ),
-                view=self
-            )
+            await interaction.response.defer()
             book.comment_last_update = now_time
             await book.update_comment()
-            return await interaction.message.edit(embed=book.comments_embed())
 
-        await interaction.response.edit_message(
+        await interaction.edit_original_response(
             embed=book.comments_embed(),
-            view=self
+            view=self,
         )
 
     async def get_content_button_callback(self, interaction: Interaction):
@@ -167,7 +155,7 @@ class InfoView(View):
         content_msg = await interaction.response.send_message(
             embed=Embed(
                 title="擷取內文中...",
-                description="正在計算進度..."
+                description="正在計算進度...",
             )
         )
         if not book.content_cache:

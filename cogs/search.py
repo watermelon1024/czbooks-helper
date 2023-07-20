@@ -8,8 +8,7 @@ from discord.ui import View, Select
 from bot import BaseCog
 from utils.czbooks import (
     HyperLink,
-    get_book,
-    fetch_book,
+    get_or_fetch_book,
     search,
 )
 from cogs.info import InfoView
@@ -48,29 +47,28 @@ class SearchCog(BaseCog):
         by: Literal["name", "hashtag", "author"],
     ):
         print(f"{ctx.author} used /search keyword: {keyword} by: {by}")
-        msg = await ctx.respond(embed=Embed(title="搜尋中，請稍後..."))
+        await ctx.defer()
         if result := await search(keyword, by):
-            return await msg.edit_original_response(
+            return await ctx.respond(
                 embed=Embed(
                     title="搜尋結果",
                     description="\n".join(
                         f"{index}. [{novel.text}](https://czbooks.net/n/{novel.link})"  # noqa
                         for index, novel in enumerate(result[:20], start=1)
-                    )
+                    ),
                 ),
-                view=SearchView(self.bot, result[:20])
+                view=SearchView(self.bot, result[:20]),
             )
 
-        return await msg.edit_original_response(
+        return await ctx.respond(
             embed=Embed(title="無搜尋結果", color=discord.Color.red())
         )
 
     @simple_search.error
     async def on_simple_search_error(self, ctx: ApplicationContext, error):
-        print(error)
         await ctx.respond(
             embed=Embed(title="發生未知的錯誤", color=discord.Color.red()),
-            ephemeral=True
+            ephemeral=True,
         )
 
     @search_group.command(
@@ -102,7 +100,7 @@ class SearchCog(BaseCog):
     ):
         return await ctx.respond(
             embed=Embed(title="暫不開放", color=discord.Color.red()),
-            ephemeral=True
+            ephemeral=True,
         )
         print(f"{ctx.author} used /search name: {name} hashtag: {hashtag} author: {author}")  # noqa
         msg = await ctx.respond(embed=Embed(title="搜尋中，請稍後..."))
@@ -157,7 +155,7 @@ class SearchCog(BaseCog):
         print(error)
         await ctx.respond(
             embed=Embed(title="發生未知的錯誤", color=discord.Color.red()),
-            ephemeral=True
+            ephemeral=True,
         )
 
     @discord.Cog.listener()
@@ -187,20 +185,12 @@ class SearchView(View):
     async def select_callback(self, interaction: Interaction):
         code = interaction.data["values"][0]
         print(f"{interaction.user} used /info link: {code}")
+        await interaction.response.defer()
 
-        if book := get_book(code):
-            return await interaction.response.send_message(
-                embed=book.overview_embed(),
-                view=InfoView(self.bot)
-            )
-
-        msg = await interaction.response.send_message(
-            embed=Embed(title="資料擷取中，請稍後...")
-        )
-        book = await fetch_book(code)
-        await msg.edit_original_response(
+        book = await get_or_fetch_book(code)
+        await interaction.followup.send(
             embed=book.overview_embed(),
-            view=InfoView(self.bot)
+            view=InfoView(self.bot),
         )
 
 

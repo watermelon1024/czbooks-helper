@@ -2,6 +2,7 @@ import json
 import re
 
 from datetime import datetime
+from typing import Literal
 
 import aiohttp
 
@@ -55,7 +56,7 @@ class HyperLink:
 class Comment:
     def __init__(
         self,
-        author: str, message: str, date: int
+        author: str, message: str, date: int,
     ) -> None:
         self.author = author
         self.message = message
@@ -126,7 +127,7 @@ class Czbooks:
                 await msg.edit_original_response(
                     embed=Embed(
                         title="擷取內文中...",
-                        description=f"第{index}/{chapter_count}章 {progress*100:.1f}%```{bar}```預計剩餘時間: {eta}"  # noqa
+                        description=f"第{index}/{chapter_count}章 {progress*100:.1f}%```{bar}```預計剩餘時間: {eta}",  # noqa
                     )
                 )
 
@@ -159,7 +160,6 @@ class Czbooks:
                 ]
             except Exception as e:
                 print(f"ERROR GET COMMENTS: {e}")
-                pass
 
         self.comments = comments
         edit_data(self)
@@ -168,7 +168,7 @@ class Czbooks:
         embed = Embed(
             title=self.title,
             description=f"- 作者: {self.author}\n- 總字數: {f'`{self.words_count}`字' if self.words_count else '`請點擊取得內文以取得字數`'}",  # noqa
-            url=f"https://czbooks.net/n/{self.code}"
+            url=f"https://czbooks.net/n/{self.code}",
         )
         embed.add_field(
             name="書本簡述",
@@ -176,7 +176,7 @@ class Czbooks:
                 self.description if len(self.description) < 1024
                 else self.description[:1020] + " ..."
             ),
-            inline=False
+            inline=False,
         )
         if self.hashtags:
             hashtag_text = ""
@@ -184,9 +184,9 @@ class Czbooks:
                 last_hashtag := str(self.hashtags[-1])
             )
             for hashtag in self.hashtags[:-1]:
-                hashtag_len += len(text := f"{hashtag}, ")
+                hashtag_len += len(text := f"{hashtag}、")
                 if hashtag_len > 1018:
-                    hashtag_text += " ..., "
+                    hashtag_text += "⋯⋯、"
                     break
                 hashtag_text += text
             hashtag_text += last_hashtag
@@ -216,19 +216,19 @@ class Czbooks:
         return Embed(
             title=f"{self.title}章節列表",
             description=chapter_text + chapter_text_,
-            url=f"https://czbooks.net/n/{self.code}"
+            url=f"https://czbooks.net/n/{self.code}",
         )
 
     def comments_embed(self) -> Embed:
         embed = Embed(
             title=f"{self.title}評論列表",
-            url=f"https://czbooks.net/n/{self.code}"
+            url=f"https://czbooks.net/n/{self.code}",
         )
         for comment in self.comments:
             embed.add_field(
                 name=comment.author,
                 value=f"```{comment.message}```",
-                inline=False
+                inline=False,
             )
             if len(embed) > 6000:
                 embed.remove_field(-1)
@@ -253,7 +253,7 @@ with open("./data/books.json", "r", encoding="utf-8") as file:
             [
                 Comment(*comment.values())
                 for comment in detail["comments"]
-            ]
+            ],
         ) for code, detail in data.items()
     }
 
@@ -295,7 +295,7 @@ async def fetch_book(code: str) -> Czbooks:
 
     book = Czbooks(
         code, title, description, thumbnail, author, False, 0,
-        hashtags, chapter_lists, []
+        hashtags, chapter_lists, [],
     )
     books_cache[code] = book
     edit_data(book)
@@ -321,22 +321,22 @@ def edit_data(book: Czbooks):
             "hashtags": [
                 {
                     "text": hashtag.text,
-                    "link": hashtag.link
+                    "link": hashtag.link,
                 } for hashtag in book.hashtags
             ],
             "chapters": [
                 {
                     "text": chapter.text,
-                    "link": chapter.link
+                    "link": chapter.link,
                 } for chapter in book.chapter_list
             ],
             "comments": [
                 {
                     "author": comment.author,
                     "message": comment.message,
-                    "date": comment.date
+                    "date": comment.date,
                 } for comment in book.comments
-            ]
+            ],
         }
         file.seek(0, 0)
         json.dump(data, file, ensure_ascii=False)
@@ -351,19 +351,24 @@ by_dict = {
 }
 
 
-async def search(keyword: str, by: str, page: int = 0) -> list[HyperLink]:
-    if not (by_ := by_dict.get(by)):
+async def search(
+    keyword: str,
+    by: Literal["name", "hashtag", "author"],
+    page: int = 0,
+) -> list[HyperLink]:
+    if not (_by := by_dict.get(by)):
         raise ValueError(f"Unknown value \"{by}\" of by arg")
-    soup = await get_html(f"https://czbooks.net/{by_}/{keyword}")
+    soup = await get_html(f"https://czbooks.net/{_by}/{keyword}")
     novel_list_ul = soup.find(
         "ul", class_="nav novel-list style-default"
     ).find_all("li", class_="novel-item-wrapper")
+
     if not novel_list_ul:
         return None
 
     return [
         HyperLink(
             novel.find("div", class_="novel-item-title").text.strip(),
-            get_code(novel.find("a").get("href"))
+            get_code(novel.find("a").get("href")),
         ) for novel in novel_list_ul
     ]
