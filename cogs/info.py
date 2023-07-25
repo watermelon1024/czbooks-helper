@@ -133,9 +133,6 @@ class InfoView(View):
         )
 
     async def comment_button_callback(self, interaction: Interaction):
-        self.overview_button.disabled = False
-        self.chapter_button.disabled = False
-        self.comment_button.disabled = True
         self.get_content_button.disabled = (
             interaction.message.components[-1].children[0].disabled
         )
@@ -143,17 +140,26 @@ class InfoView(View):
         book = get_book(get_code(interaction.message.embeds[0].url))
 
         now_time = datetime.now().timestamp()
+        update = False
         if (not book.comment_last_update) or (
             now_time - book.comment_last_update > 600
         ):
-            await interaction.response.defer()
+            update = True
+            self.disable_all_items(exclusions=[self.get_content_button])
+            await interaction.response.edit_message(
+                embed=Embed(title="讀取評論中..."),
+                view=self,
+            )
             book.comment_last_update = now_time
             await book.update_comment()
 
-        await interaction.message.edit(
-            embed=book.comments_embed(),
-            view=self,
-        )
+        self.overview_button.disabled = False
+        self.chapter_button.disabled = False
+        self.comment_button.disabled = True
+        await (
+            interaction.message.edit if update
+            else interaction.response.edit_message
+        )(embed=book.comments_embed(), view=self)
 
     async def get_content_button_callback(self, interaction: Interaction):
         self.get_content_button.disabled = (
