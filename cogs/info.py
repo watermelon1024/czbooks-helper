@@ -190,10 +190,8 @@ class InfoView(View):
             print(f"{book.title} total words: {book.words_count}.")
         except asyncio.CancelledError:
             book.words_count = 0
-            return await content_msg.edit_original_response(
-                content="已取消",
-                delete_after=5,
-            )
+            self.get_content_button.disabled = False
+            return await interaction.message.edit(view=self)
 
         await content_msg.edit_original_response(
             content=f"擷取成功，耗時`{time_taken:.1f}`秒\n- 書名: {book.title}\n- 總字數: `{book.words_count}`字",  # noqa
@@ -205,8 +203,20 @@ class InfoView(View):
             await interaction.message.edit(embed=book.overview_embed())
 
     async def cancel_get_content(self, interaction: Interaction):
-        book = get_book(get_code(interaction.message.embeds[0].url))
+        book = get_book(get_code(
+            (
+                await interaction.channel.fetch_message(
+                    interaction.message.reference.message_id
+                )
+            ).embeds[0].url
+        ))
         book.get_content_task.cancel()
+        print(f"{interaction.user} cancel gets {book.title}'s content")
+        await interaction.response.edit_message(
+            embed=Embed(title="已取消"),
+            view=None,
+            delete_after=3,
+        )
 
 
 def setup(bot: Bot):
