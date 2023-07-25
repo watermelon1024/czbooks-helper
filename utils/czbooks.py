@@ -1,3 +1,4 @@
+import asyncio
 import json
 import re
 
@@ -88,6 +89,7 @@ class Czbooks:
         self.chapter_list = chapter_list
         self.comments = comments
         self.comment_last_update: float = None
+        self.get_content_task: asyncio.Task = None
 
     async def get_content(self, msg: Interaction) -> float:
         self.content = f"{self.title}\n連結: https://czbooks.net/n/{self.code}\n作者:{self.author}"  # noqa

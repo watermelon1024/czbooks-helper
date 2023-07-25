@@ -1,3 +1,5 @@
+import asyncio
+
 from pathlib import Path
 from datetime import datetime
 
@@ -94,6 +96,16 @@ class InfoView(View):
         self.get_content_button.callback = self.get_content_button_callback
         self.add_item(self.get_content_button)
 
+        cancel_get_content_button = Button(
+            custom_id="cancel_get_content_button",
+            label="取消擷取"
+        )
+        cancel_get_content_button.callback = self.cancel_get_content
+        self.cancel_get_content_view = View(
+            cancel_get_content_button,
+            timeout=None,
+        )
+
     async def overview_button_callback(self, interaction: Interaction):
         self.overview_button.disabled = True
         self.chapter_button.disabled = False
@@ -151,28 +163,44 @@ class InfoView(View):
         await interaction.message.edit(view=self)
 
         book = get_book(get_code(interaction.message.embeds[0].url))
+        if book.content_cache:
+            return await interaction.response.send_message(
+                content=f"- 書名: {book.title}\n- 總字數: `{book.words_count}`字",
+                file=discord.File(Path(f"./data/{book.code}.txt")),
+            )
 
         content_msg = await interaction.response.send_message(
             embed=Embed(
                 title="擷取內文中...",
                 description="正在計算進度...",
-            )
+            ),
+            view=self.cancel_get_content_view,
         )
-        time_taken_display = ""
-        if not book.content_cache:
-            print(f"{interaction.user} gets {book.title}'s content")
-            time_taken = await book.get_content(content_msg)
-            time_taken_display = f"擷取成功，耗時`{time_taken:.1f}`秒\n"
+        print(f"{interaction.user} gets {book.title}'s content")
+        task = asyncio.create_task(book.get_content(content_msg))
+        book.get_content_task = task
+        try:
+            time_taken = await task
             print(f"{book.title} total words: {book.words_count}.")
-
-            if interaction.message.components[0].children[0].disabled:
-                await interaction.message.edit(embed=book.overview_embed())
+        except asyncio.CancelledError:
+            book.words_count = 0
+            return await content_msg.edit_original_response(
+                content="已取消",
+                delete_after=5,
+            )
 
         await content_msg.edit_original_response(
-            content=f"{time_taken_display}- 書名: {book.title}\n- 總字數: `{book.words_count}`字",  # noqa
+            content=f"擷取成功，耗時`{time_taken:.1f}`秒\n- 書名: {book.title}\n- 總字數: `{book.words_count}`字",  # noqa
             embed=None,
+            view=None,
             file=discord.File(Path(f"./data/{book.code}.txt")),
         )
+        if interaction.message.components[0].children[0].disabled:
+            await interaction.message.edit(embed=book.overview_embed())
+
+    async def cancel_get_content(self, interaction: Interaction):
+        book = get_book(get_code(interaction.message.embeds[0].url))
+        book.get_content_task.cancel()
 
 
 def setup(bot: Bot):
