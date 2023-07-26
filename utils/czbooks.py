@@ -31,6 +31,10 @@ def progress_bar(
     return percentage, f"[{'='*filled_length}{' '*(bar_length-filled_length)}]"
 
 
+def rgb_to_hex(r: int, g: int, b: int) -> int:
+    return (r << 16) + (g << 8) + b
+
+
 async def get(link: str) -> str:
     async with aiohttp.request("GET", link) as response:
         text = await response.text()
@@ -98,6 +102,7 @@ class Czbooks:
         # 逐章爬取內容
         start_time = datetime.now().timestamp()
         last_time = start_time
+        r, g = 255, 0
         for index, ch in enumerate(self.chapter_list, start=1):
             try:
                 soup = await get_html(ch.link)
@@ -126,10 +131,15 @@ class Czbooks:
                     f"`{(total_diff / progress - total_diff):.1f}`秒"
                     if progress > 0.1 or total_diff > 10 else "計算中..."
                 )
+                if progress < 0.5:
+                    g = int(510 * progress)
+                else:
+                    r = int(510 * (1 - progress))
                 await msg.edit_original_response(
                     embed=Embed(
                         title="擷取內文中...",
                         description=f"第{index}/{chapter_count}章 {progress*100:.1f}%```{bar}```預計剩餘時間: {eta}",  # noqa
+                        color=rgb_to_hex(r, g, 0),
                     )
                 )
 

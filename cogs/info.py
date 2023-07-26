@@ -98,7 +98,8 @@ class InfoView(View):
 
         cancel_get_content_button = Button(
             custom_id="cancel_get_content_button",
-            label="取消擷取"
+            label="取消擷取",
+            style=discord.ButtonStyle.red,
         )
         cancel_get_content_button.callback = self.cancel_get_content
         self.cancel_get_content_view = View(
