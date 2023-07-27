@@ -56,6 +56,7 @@ class SearchCog(BaseCog):
                         f"{index}. [{novel.text}](https://czbooks.net/n/{novel.link})"  # noqa
                         for index, novel in enumerate(result[:20], start=1)
                     ),
+                    color=discord.Color.green(),
                 ),
                 view=SearchView(self.bot, result[:20]),
             )
