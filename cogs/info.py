@@ -211,6 +211,9 @@ class InfoView(View):
                 )
             ).embeds[0].url
         ))
+        if book.content_cache:
+            return
+
         book.get_content_task.cancel()
         print(f"{interaction.user} cancel gets {book.title}'s content")
         await interaction.response.edit_message(

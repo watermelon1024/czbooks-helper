@@ -96,8 +96,8 @@ class Czbooks:
         self.get_content_task: asyncio.Task = None
 
     async def get_content(self, msg: Interaction) -> float:
-        self.content = f"{self.title}\n連結: https://czbooks.net/n/{self.code}\n作者:{self.author}"  # noqa
-        self.words_count = 0
+        content = f"{self.title}\n連結: https://czbooks.net/n/{self.code}\n作者: {self.author}"  # noqa
+        words_count = 0
         chapter_count = len(self.chapter_list)
         # 逐章爬取內容
         start_time = datetime.now().timestamp()
@@ -112,14 +112,14 @@ class Czbooks:
             ch_name = soup.find("div", class_="name")
             # 尋找內文
             div_content = ch_name.find_next("div", class_="content")
-            self.content += f"\n\n{'='*32} {ch_name.text} {'='*32}\n"
+            content += f"\n\n{'='*32} {ch_name.text} {'='*32}\n"
             ch_words_count = len(re.findall(chinese_char, div_content.text))
-            if ch_words_count <= 1024:
-                self.content += "(本章可能非內文)\n\n"
+            if ch_words_count < 1024:
+                content += "(本章可能非內文)\n\n"
             else:
-                self.words_count += ch_words_count
-                self.content += "\n"
-            self.content += div_content.text.strip()
+                words_count += ch_words_count
+                content += "\n"
+            content += div_content.text.strip()
 
             # 計算進度
             now_time = datetime.now().timestamp()
@@ -144,8 +144,9 @@ class Czbooks:
                 )
 
         with open(f"./data/{self.code}.txt", "w", encoding="utf-8") as file:
-            file.write(self.content)
+            file.write(content)
 
+        self.words_count = words_count
         self.content_cache = True
         edit_data(self)
 
@@ -369,7 +370,7 @@ async def search(
     page: int = 0,
 ) -> list[HyperLink]:
     if not (_by := by_dict.get(by)):
-        raise ValueError(f"Unknown value \"{by}\" of by arg")
+        raise ValueError(f"Unknown value \"{by}\" of by")
     soup = await get_html(f"https://czbooks.net/{_by}/{keyword}")
     novel_list_ul = soup.find(
         "ul", class_="nav novel-list style-default"
