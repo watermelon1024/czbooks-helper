@@ -115,7 +115,9 @@ class Czbooks:
                 # 尋找內文
                 div_content = ch_name.find_next("div", class_="content")
                 content += f"\n\n{'='*32} {ch_name.text} {'='*32}\n"
-                ch_words_count = len(re.findall(chinese_char, div_content.text))
+                ch_words_count = len(re.findall(
+                    chinese_char, div_content.text
+                ))
                 if ch_words_count < 1024:
                     content += "(本章可能非內文)\n\n"
                 else:
@@ -156,16 +158,14 @@ class Czbooks:
 
     async def update_comment(self):
         comments = []
-        page = 0
-        last_id = ""
-        while True:
-            page += 1
-            try:
-                resp = await get(f"https://api.czbooks.net/web/comment/list?novelId={self.code}&page={page}&cleanCache=true")  # noqa
-                items = json.loads(resp)["data"]["items"]
-                if len(items) == 0 or last_id == items[0]["id"]:
-                    break
-                last_id = items[0]["id"]
+        page = 1
+        async with aiohttp.ClientSession() as session:
+            while True:
+                async with session.get(
+                    f"https://api.czbooks.net/web/comment/list?novelId={self.code}&page={page}&cleanCache=true"  # noqa
+                ) as response:
+                    data = await response.json()
+                    items = data["data"]["items"]
                 comments += [
                     Comment(
                         comment["nickname"],
@@ -173,8 +173,9 @@ class Czbooks:
                         comment["date"],
                     ) for comment in items
                 ]
-            except Exception as e:
-                print(f"ERROR GET COMMENTS: {e}")
+
+                if not (page := data["next"]):
+                    break
 
         self.comments = comments
         edit_data(self)
