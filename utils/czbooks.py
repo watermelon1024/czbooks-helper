@@ -57,6 +57,12 @@ class HyperLink:
     def __str__(self) -> str:
         return f"[{self.text}]({self.link})"
 
+    def to_dict(self) -> dict:
+        return {
+            "text": self.text,
+            "link": self.link,
+        }
+
 
 class Comment:
     def __init__(
@@ -67,6 +73,13 @@ class Comment:
         self.message = message
         self.date = date
 
+    def to_dict(self) -> dict:
+        return {
+            "author": self.author,
+            "message": self.message,
+            "date": self.date,
+        }
+
 
 class Czbooks:
     def __init__(
@@ -75,7 +88,9 @@ class Czbooks:
         title: str,
         description: str,
         thumbnail: str | None,
-        author: str,
+        author: HyperLink,
+        views: int,
+        category: HyperLink,
         content_cache: bool,
         words_count: int,
         hashtags: list[HyperLink],
@@ -87,6 +102,8 @@ class Czbooks:
         self.description = description
         self.thumbnail = thumbnail
         self.author = author
+        self.views = views
+        self.category = category
         self.content_cache = content_cache
         self.words_count = words_count
         self.hashtags = hashtags
@@ -96,7 +113,7 @@ class Czbooks:
         self.get_content_task: asyncio.Task = None
 
     async def get_content(self, msg: Interaction) -> float:
-        content = f"{self.title}\n連結: https://czbooks.net/n/{self.code}\n作者: {self.author}"  # noqa
+        content = f"{self.title}\n連結: https://czbooks.net/n/{self.code}\n作者: {self.author.text}"  # noqa
         words_count = 0
         chapter_count = len(self.chapter_list)
         # 逐章爬取內容
@@ -174,7 +191,7 @@ class Czbooks:
                     ) for comment in items
                 ]
 
-                if not (page := data["next"]):
+                if not (page := data.get("next")):
                     break
 
         self.comments = comments
@@ -252,26 +269,61 @@ class Czbooks:
 
         return embed
 
+    def to_dict(self) -> dict:
+        return {
+            "code": self.code,
+            "title": self.title,
+            "description": self.description,
+            "thumbnail": self.thumbnail,
+            "author": self.author.to_dict(),
+            "views": self.views,
+            "category": self.category.to_dict(),
+            # "content_cache": self.content_cache,
+            "words_count": self.words_count,
+            "hashtags": [hashtag.to_dict() for hashtag in self.hashtags],
+            "chapter_list": [chapter.to_dict() for chapter in self.chapter_list],
+            # "comments": [comment.to_dict() for comment in self.comments],
+        }
+
+
+def load_from_json(data: dict) -> Czbooks:
+    return Czbooks(
+        data["code"],
+        data["title"],
+        data["description"],
+        data["thumbnail"],
+        HyperLink(*data["author"].values()),
+        data["views"],
+        HyperLink(*data["category"].values()),
+        bool(data["words_count"]),
+        data["words_count"],
+        [
+            HyperLink(*hashtag.values())
+            for hashtag in data["hashtags"]
+        ],
+        [
+            HyperLink(*chapter.values())
+            for chapter in data["chapter_list"]
+        ],
+        [],
+    )
+
 
 with open("./data/books.json", "r", encoding="utf-8") as file:
     data: dict[str, dict] = json.load(file)
     books_cache = {
-        code: Czbooks(
-            *list(detail.values())[:7],
-            [
-                HyperLink(*hashtag.values())
-                for hashtag in detail["hashtags"]
-            ],
-            [
-                HyperLink(*chapter.values())
-                for chapter in detail["chapters"]
-            ],
-            [
-                Comment(*comment.values())
-                for comment in detail["comments"]
-            ],
-        ) for code, detail in data.items()
+        code: load_from_json(detail)
+        for code, detail in data.items()
     }
+
+
+def edit_data(book: Czbooks):
+    with open("./data/books.json", "r+", encoding="utf-8") as file:
+        data = json.load(file)
+        data[book.code] = book.to_dict()
+        file.seek(0, 0)
+        json.dump(data, file, ensure_ascii=False)
+        file.truncate()
 
 
 def get_code(s: str) -> str | None:
@@ -286,14 +338,24 @@ def get_book(code: str) -> Czbooks:
 
 async def fetch_book(code: str) -> Czbooks:
     soup = await get_html(f"https://czbooks.net/n/{code}")
-    detail_div = soup.find("div", class_="novel-detail")
+    # book state
+    state_div = soup.find("div", class_="state")
+    state_children = state_div.find_all("td")
+    views = state_children[5].text
+    category_a = state_children[9].contents[0]
+    category = HyperLink(
+        category_a.text,
+        "https:"+category_a["href"],
+    )
     # basic info
+    detail_div = soup.find("div", class_="novel-detail")
     title = detail_div.find("span", class_="title").text
     description = detail_div.find("div", class_="description").text
     thumbnail = detail_div.find("img").get("src")
     if not thumbnail.startswith("https://img.czbooks.net"):
         thumbnail = None
-    author = detail_div.find("span", class_="author").contents[1].text
+    author_span = detail_div.find("span", class_="author").contents[1]
+    author = HyperLink(author_span.text, "https:"+author_span["href"])
     # hashtags
     hashtags = [
         HyperLink(hashtag.text, "https:"+hashtag["href"])
@@ -310,8 +372,8 @@ async def fetch_book(code: str) -> Czbooks:
     ]
 
     book = Czbooks(
-        code, title, description, thumbnail, author, False, 0,
-        hashtags, chapter_lists, [],
+        code, title, description, thumbnail, author, views, category,
+        False, 0, hashtags, chapter_lists, [],
     )
     books_cache[code] = book
     edit_data(book)
@@ -321,42 +383,6 @@ async def fetch_book(code: str) -> Czbooks:
 
 async def get_or_fetch_book(code: str) -> Czbooks:
     return get_book(code) or await fetch_book(code)
-
-
-def edit_data(book: Czbooks):
-    with open("./data/books.json", "r+", encoding="utf-8") as file:
-        data = json.load(file)
-        data[book.code] = {
-            "code": book.code,
-            "title": book.title,
-            "description": book.description,
-            "thumbnail": book.thumbnail,
-            "author": book.author,
-            "content_cache": book.content_cache,
-            "words_count": book.words_count,
-            "hashtags": [
-                {
-                    "text": hashtag.text,
-                    "link": hashtag.link,
-                } for hashtag in book.hashtags
-            ],
-            "chapters": [
-                {
-                    "text": chapter.text,
-                    "link": chapter.link,
-                } for chapter in book.chapter_list
-            ],
-            "comments": [
-                {
-                    "author": comment.author,
-                    "message": comment.message,
-                    "date": comment.date,
-                } for comment in book.comments
-            ],
-        }
-        file.seek(0, 0)
-        json.dump(data, file, ensure_ascii=False)
-        file.truncate()
 
 
 # search by name: s, hashtag: hashtag, author: a
