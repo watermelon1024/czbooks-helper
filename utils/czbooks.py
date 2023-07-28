@@ -202,7 +202,7 @@ class Czbooks:
             title=self.title,
             description=f"""- 作　者：{self.author}
 - 總字數：{f'`{self.words_count}`字' if self.words_count else '`請點擊取得內文以取得字數`'}
-- 觀看數：`{self.views}次`
+- 觀看數：`{self.views}`次
 - 分　類：{self.category}""",
             url=f"https://czbooks.net/n/{self.code}",
             color=Color.random(),
@@ -254,12 +254,14 @@ class Czbooks:
             title=f"{self.title}章節列表",
             description=chapter_text + chapter_text_,
             url=f"https://czbooks.net/n/{self.code}",
+            color=Color.random(),
         )
 
     def comments_embed(self) -> Embed:
         embed = Embed(
             title=f"{self.title}評論列表",
             url=f"https://czbooks.net/n/{self.code}",
+            color=Color.random(),
         )
         for comment in self.comments:
             embed.add_field(
