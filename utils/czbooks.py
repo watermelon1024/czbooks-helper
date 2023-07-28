@@ -7,7 +7,7 @@ from typing import Literal
 
 import aiohttp
 
-from discord import Embed, Interaction
+from discord import Embed, Interaction, Color
 from bs4 import BeautifulSoup
 
 chinese_char = re.compile(r"[\u4e00-\u9fa5]")
@@ -200,8 +200,12 @@ class Czbooks:
     def overview_embed(self) -> Embed:
         embed = Embed(
             title=self.title,
-            description=f"- 作者: {self.author}\n- 總字數: {f'`{self.words_count}`字' if self.words_count else '`請點擊取得內文以取得字數`'}",  # noqa
+            description=f"""- 作　者：{self.author}
+- 總字數：{f'`{self.words_count}`字' if self.words_count else '`請點擊取得內文以取得字數`'}
+- 觀看數：`{self.views}次`
+- 分　類：{self.category}""",
             url=f"https://czbooks.net/n/{self.code}",
+            color=Color.random(),
         )
         embed.add_field(
             name="書本簡述",
