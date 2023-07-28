@@ -13,3 +13,7 @@
 
 # Invite me
 click [here](https://discord.com/api/oauth2/authorize?client_id=1121051030432526416&permissions=3072&scope=bot%20applications.commands) to invite discord bot to your server.
+
+# Disclaimer
+
+This repository is intended solely for educational purposes and must not be used for commercial purposes.
