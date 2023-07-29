@@ -184,10 +184,8 @@ class InfoView(View):
             view=self.cancel_get_content_view,
         )
         print(f"{interaction.user} gets {book.title}'s content")
-        task = asyncio.create_task(book.get_content(content_msg))
-        book.get_content_task = task
         try:
-            time_taken = await task
+            time_taken = await book.get_content(content_msg)
             print(f"{book.title} total words: {book.words_count}.")
         except asyncio.CancelledError:
             book.words_count = 0

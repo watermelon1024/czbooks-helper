@@ -7,7 +7,7 @@ from typing import Literal
 
 import aiohttp
 
-from discord import Embed, Interaction, Color
+from discord import Embed, Interaction, Color, MISSING
 from bs4 import BeautifulSoup
 
 chinese_char = re.compile(r"[\u4e00-\u9fa5]")
@@ -111,8 +111,16 @@ class Czbooks:
         self.comments = comments
         self.comment_last_update: float = None
         self.get_content_task: asyncio.Task = None
+        self.get_content_progress_messages: list[Interaction] = []
 
-    async def get_content(self, msg: Interaction) -> float:
+    async def _edit_progress_message(self, embed: Embed, delete_view: bool) -> None:
+        for msg in self.get_content_progress_messages:
+            await msg.edit_original_response(
+                embed=embed,
+                view=None if delete_view else MISSING,
+            )
+
+    async def _get_content(self) -> float:
         content = f"{self.title}\n連結: https://czbooks.net/n/{self.code}\n作者: {self.author.text}"  # noqa
         words_count = 0
         chapter_count = len(self.chapter_list)
@@ -145,24 +153,27 @@ class Czbooks:
                 # 計算進度
                 now_time = datetime.now().timestamp()
                 total_diff = now_time - start_time
-                if now_time - last_time > 2:
-                    last_time = now_time
-                    progress, bar = progress_bar(index, chapter_count)
-                    eta = (
-                        f"`{(total_diff / progress - total_diff):.1f}`秒"
-                        if progress > 0.1 or total_diff > 10 else "計算中..."
-                    )
-                    if progress < 0.5:
-                        g = int(510 * progress)
-                    else:
-                        r = int(510 * (1 - progress))
-                    await msg.edit_original_response(
-                        embed=Embed(
-                            title="擷取內文中...",
-                            description=f"第{index}/{chapter_count}章 {progress*100:.1f}%```{bar}```預計剩餘時間: {eta}",  # noqa
-                            color=rgb_to_hex(r, g, 0),
-                        )
-                    )
+                if now_time - last_time < 2:
+                    continue
+                last_time = now_time
+                progress, bar = progress_bar(index, chapter_count)
+                eta = total_diff / progress - total_diff
+                eta_display = (
+                    f"`{eta:.1f}`秒"
+                    if progress > 0.1 or total_diff > 10 else "計算中..."
+                )
+                if progress < 0.5:
+                    g = int(510 * progress)
+                else:
+                    r = int(510 * (1 - progress))
+                asyncio.create_task(self._edit_progress_message(
+                    Embed(
+                        title="擷取內文中...",
+                        description=f"第{index}/{chapter_count}章 {progress*100:.1f}%```{bar}```預計剩餘時間: {eta_display}",  # noqa
+                        color=rgb_to_hex(r, g, 0),
+                    ),
+                    None if eta < 4 else True,
+                ))
 
         with open(f"./data/{self.code}.txt", "w", encoding="utf-8") as file:
             file.write(content)
@@ -172,6 +183,13 @@ class Czbooks:
         edit_data(self)
 
         return total_diff
+
+    def get_content(self, msg: Interaction) -> asyncio.Task[float]:
+        self.get_content_progress_messages.append(msg)
+        if self.get_content_task:
+            return self.get_content_task
+        self.get_content_task = asyncio.create_task(self._get_content())
+        return self.get_content_task
 
     async def update_comment(self):
         comments = []
