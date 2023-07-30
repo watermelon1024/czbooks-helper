@@ -233,6 +233,7 @@ class Czbooks:
         embed = Embed(
             title=self.title,
             description=f"""- 作　者：{self.author}
+- 狀　態：{self.state}
 - 總字數：{f'`{self.words_count}`字' if self.words_count else '`請點擊取得內文以取得字數`'}
 - 觀看數：`{self.views}`次
 - 分　類：{self.category}""",
