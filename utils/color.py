@@ -7,6 +7,11 @@ from PIL import Image
 from sklearn.cluster import KMeans
 
 
+def rgb_to_int_hex(rgb):
+    r, g, b, *_= rgb
+    return (r << 16) + (g << 8) + b
+
+
 def extract_theme_colors(
     image: Image.Image,
     num_colors=10,
@@ -27,7 +32,7 @@ def extract_theme_colors(
 def get_main_colors(
     image: Image.Image,
     num_colors=10,
-) -> tuple[int, int, int, int]:
+) -> list[tuple[int, int, int, int]]:
     base_colors = extract_theme_colors(image, num_colors)
     sorted_colors = sorted(
         list(
