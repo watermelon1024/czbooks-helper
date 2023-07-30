@@ -8,7 +8,7 @@ from sklearn.cluster import KMeans
 
 
 def rgb_to_int_hex(rgb):
-    r, g, b, *_= rgb
+    r, g, b, *_ = rgb
     return (r << 16) + (g << 8) + b
 
 

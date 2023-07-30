@@ -390,8 +390,8 @@ async def fetch_book(code: str) -> Czbooks:
         theme_colors = get_main_colors(await get_img_from_url(thumbnail))
         theme_colors_hex = list(map(rgb_to_int_hex, theme_colors))
     else:
-        theme_colors = None
         thumbnail = None
+        theme_colors_hex = None
     author_span = detail_div.find("span", class_="author").contents[1]
     author = HyperLink(author_span.text, "https:" + author_span["href"])
     # hashtags
