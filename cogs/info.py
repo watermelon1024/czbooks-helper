@@ -116,7 +116,7 @@ class InfoView(View):
         )
         code = get_code(interaction.message.embeds[0].url)
         await interaction.response.edit_message(
-            embed=get_book(code).overview_embed(),
+            embed=(await get_or_fetch_book(code)).overview_embed(),
             view=self,
         )
 
@@ -129,7 +129,7 @@ class InfoView(View):
         )
         code = get_code(interaction.message.embeds[0].url)
         await interaction.response.edit_message(
-            embed=get_book(code).chapter_embed(),
+            embed=(await get_or_fetch_book(code)).chapter_embed(),
             view=self,
         )
 
@@ -138,7 +138,7 @@ class InfoView(View):
             interaction.message.components[-1].children[0].disabled
         )
 
-        book = get_book(get_code(interaction.message.embeds[0].url))
+        book = await get_or_fetch_book(get_code(interaction.message.embeds[0].url))
 
         now_time = datetime.now().timestamp()
         update = False
@@ -168,7 +168,7 @@ class InfoView(View):
         self.get_content_button.disabled = True
         await interaction.message.edit(view=self)
 
-        book = get_book(get_code(interaction.message.embeds[0].url))
+        book = await get_or_fetch_book(get_code(interaction.message.embeds[0].url))
         if book.content_cache:
             return await interaction.response.send_message(
                 content=f"- 書名: {book.title}\n- 總字數: `{book.words_count}`字",
