@@ -1,5 +1,4 @@
 import io
-import random
 
 import aiohttp
 import numpy as np
@@ -8,7 +7,7 @@ from PIL import Image
 from sklearn.cluster import KMeans
 
 
-def extract_theme_color(
+def extract_theme_colors(
     image: Image.Image,
     num_colors=10,
 ) -> list[tuple[int, int, int, int]]:
@@ -25,11 +24,11 @@ def extract_theme_color(
     return k_means.cluster_centers_.astype(int).tolist()
 
 
-def get_main_color(
+def get_main_colors(
     image: Image.Image,
     num_colors=10,
 ) -> tuple[int, int, int, int]:
-    base_colors = extract_theme_color(image, num_colors)
+    base_colors = extract_theme_colors(image, num_colors)
     sorted_colors = sorted(
         list(
             filter(
@@ -38,11 +37,7 @@ def get_main_color(
             )
         )
     )
-    return (
-        random.choice(sorted_colors[-4:])
-        if sorted_colors
-        else random.choice(base_colors)
-    )
+    return sorted_colors[-4:] if sorted_colors else base_colors
 
 
 async def get_img_from_url(url: str) -> Image.Image:

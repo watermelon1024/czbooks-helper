@@ -1,5 +1,6 @@
 import asyncio
 import json
+import random
 import re
 
 from datetime import datetime
@@ -10,7 +11,7 @@ import aiohttp
 from discord import Embed, Interaction, Color, MISSING
 from bs4 import BeautifulSoup
 
-from .color import extract_theme_color
+from .color import get_main_colors, get_img_from_url
 
 chinese_char = re.compile(r"[\u4e00-\u9fa5]")
 re_code = re.compile(r"(czbooks\.net\/n\/)([a-z0-9]+)")
@@ -90,7 +91,7 @@ class Czbooks:
         title: str,
         description: str,
         thumbnail: str | None,
-        main_color: int | None,
+        theme_colors: list[int] | None,
         author: HyperLink,
         state: str,
         views: int,
@@ -105,7 +106,7 @@ class Czbooks:
         self.title = title
         self.description = description
         self.thumbnail = thumbnail
-        self.main_color = main_color
+        self.theme_colors = theme_colors
         self.author = author
         self.state = state
         self.views = views
@@ -221,6 +222,13 @@ class Czbooks:
         self.comments = comments
         edit_data(self)
 
+    def get_theme_color(self) -> Color:
+        return (
+            Color(random.choice(self.theme_colors))
+            if self.theme_colors
+            else Color.random()
+        )
+
     def overview_embed(self) -> Embed:
         embed = Embed(
             title=self.title,
@@ -229,7 +237,7 @@ class Czbooks:
 - 觀看數：`{self.views}`次
 - 分　類：{self.category}""",
             url=f"https://czbooks.net/n/{self.code}",
-            color=Color.random(),
+            color=self.get_theme_color(),
         )
         embed.add_field(
             name="書本簡述",
@@ -277,14 +285,14 @@ class Czbooks:
             title=f"{self.title}章節列表",
             description=chapter_text + chapter_text_,
             url=f"https://czbooks.net/n/{self.code}",
-            color=Color.random(),
+            color=self.get_theme_color(),
         )
 
     def comments_embed(self) -> Embed:
         embed = Embed(
             title=f"{self.title}評論列表",
             url=f"https://czbooks.net/n/{self.code}",
-            color=Color.random(),
+            color=self.get_theme_color(),
         )
         for comment in self.comments:
             embed.add_field(
@@ -304,7 +312,7 @@ class Czbooks:
             "title": self.title,
             "description": self.description,
             "thumbnail": self.thumbnail,
-            "main_color": self.main_color,
+            "main_color": self.theme_colors,
             "author": self.author.to_dict(),
             "state": self.state,
             "views": self.views,
@@ -377,7 +385,10 @@ async def fetch_book(code: str) -> Czbooks:
     title = detail_div.find("span", class_="title").text
     description = detail_div.find("div", class_="description").text
     thumbnail = detail_div.find("img").get("src")
-    if not thumbnail.startswith("https://img.czbooks.net"):
+    if thumbnail.startswith("https://img.czbooks.net"):
+        theme_colors = get_main_colors(get_img_from_url(thumbnail))
+    else:
+        theme_colors = None
         thumbnail = None
     author_span = detail_div.find("span", class_="author").contents[1]
     author = HyperLink(author_span.text, "https:" + author_span["href"])
@@ -397,7 +408,7 @@ async def fetch_book(code: str) -> Czbooks:
         title,
         description,
         thumbnail,
-        None,
+        theme_colors,
         author,
         state,
         views,
