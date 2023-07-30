@@ -10,6 +10,8 @@ import aiohttp
 from discord import Embed, Interaction, Color, MISSING
 from bs4 import BeautifulSoup
 
+from .color import extract_theme_color
+
 chinese_char = re.compile(r"[\u4e00-\u9fa5]")
 re_code = re.compile(r"(czbooks\.net\/n\/)([a-z0-9]+)")
 
