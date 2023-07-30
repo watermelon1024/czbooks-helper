@@ -37,12 +37,12 @@ def get_main_colors(
     sorted_colors = sorted(
         list(
             filter(
-                lambda x: x[4] > 400 and x[4] < 620,
+                lambda x: x[4] > 355 and x[4] < 665,
                 map(lambda x: (*x, sum(x)), base_colors),
             )
         )
     )
-    return sorted_colors[-4:] if sorted_colors else base_colors
+    return sorted_colors if sorted_colors else base_colors
 
 
 async def get_img_from_url(url: str) -> Image.Image:
