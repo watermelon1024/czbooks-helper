@@ -31,10 +31,6 @@ def progress_bar(
     return percentage, f"[{'='*filled_length}{' '*(bar_length-filled_length)}]"
 
 
-def rgb_to_hex(r: int, g: int, b: int) -> int:
-    return (r << 16) + (g << 8) + b
-
-
 async def get(link: str) -> str:
     async with aiohttp.request("GET", link) as response:
         text = await response.text()
@@ -88,7 +84,9 @@ class Czbooks:
         title: str,
         description: str,
         thumbnail: str | None,
+        main_color: int | None,
         author: HyperLink,
+        state: str,
         views: int,
         category: HyperLink,
         content_cache: bool,
@@ -101,7 +99,9 @@ class Czbooks:
         self.title = title
         self.description = description
         self.thumbnail = thumbnail
+        self.main_color = main_color
         self.author = author
+        self.state = state
         self.views = views
         self.category = category
         self.content_cache = content_cache
@@ -170,7 +170,7 @@ class Czbooks:
                     Embed(
                         title="擷取內文中...",
                         description=f"第{index}/{chapter_count}章 {progress*100:.1f}%```{bar}```預計剩餘時間: {eta_display}",  # noqa
-                        color=rgb_to_hex(r, g, 0),
+                        color=Color.from_rgb(r, g, 0),
                     ),
                     None if eta < 4 else True,
                 ))
@@ -299,7 +299,9 @@ class Czbooks:
             "title": self.title,
             "description": self.description,
             "thumbnail": self.thumbnail,
+            "main_color": self.main_color,
             "author": self.author.to_dict(),
+            "state": self.state,
             "views": self.views,
             "category": self.category.to_dict(),
             # "content_cache": self.content_cache,
@@ -312,22 +314,24 @@ class Czbooks:
 
 def load_from_json(data: dict) -> Czbooks:
     return Czbooks(
-        data["code"],
-        data["title"],
-        data["description"],
-        data["thumbnail"],
-        HyperLink(*data["author"].values()),
-        data["views"],
-        HyperLink(*data["category"].values()),
-        bool(data["words_count"]),
-        data["words_count"],
+        data.get("code"),
+        data.get("title"),
+        data.get("description"),
+        data.get("thumbnail"),
+        data.get("main_color"),
+        HyperLink(*data.get("author").values()),
+        data.get("state"),
+        data.get("views"),
+        HyperLink(*data.get("category").values()),
+        bool(data.get("words_count")),
+        data.get("words_count"),
         [
             HyperLink(*hashtag.values())
-            for hashtag in data["hashtags"]
+            for hashtag in data.get("hashtags")
         ],
         [
             HyperLink(*chapter.values())
-            for chapter in data["chapter_list"]
+            for chapter in data.get("chapter_list")
         ],
         [],
     )
@@ -365,6 +369,7 @@ async def fetch_book(code: str) -> Czbooks:
     # book state
     state_div = soup.find("div", class_="state")
     state_children = state_div.find_all("td")
+    state = state_children[1].text
     views = state_children[5].text
     category_a = state_children[9].contents[0]
     category = HyperLink(
@@ -396,7 +401,7 @@ async def fetch_book(code: str) -> Czbooks:
     ]
 
     book = Czbooks(
-        code, title, description, thumbnail, author, views, category,
+        code, title, description, thumbnail, None, author, state, views, category,
         False, 0, hashtags, chapter_lists, [],
     )
     books_cache[code] = book
