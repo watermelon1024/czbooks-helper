@@ -26,7 +26,9 @@ class NotFoundError(Exception):
 
 
 def progress_bar(
-    current: int, total: int, bar_length: int = 27,
+    current: int,
+    total: int,
+    bar_length: int = 27,
 ) -> tuple[float, str]:
     percentage = current / total
     filled_length = int(bar_length * percentage)
@@ -65,7 +67,9 @@ class HyperLink:
 class Comment:
     def __init__(
         self,
-        author: str, message: str, date: int,
+        author: str,
+        message: str,
+        date: int,
     ) -> None:
         self.author = author
         self.message = message
@@ -142,9 +146,7 @@ class Czbooks:
                 # 尋找內文
                 div_content = ch_name.find_next("div", class_="content")
                 content += f"\n\n{'='*32} {ch_name.text} {'='*32}\n"
-                ch_words_count = len(re.findall(
-                    chinese_char, div_content.text
-                ))
+                ch_words_count = len(re.findall(chinese_char, div_content.text))
                 if ch_words_count < 1024:
                     content += "(本章可能非內文)\n\n"
                 else:
@@ -161,21 +163,22 @@ class Czbooks:
                 progress, bar = progress_bar(index, chapter_count)
                 eta = total_diff / progress - total_diff
                 eta_display = (
-                    f"`{eta:.1f}`秒"
-                    if progress > 0.1 or total_diff > 10 else "計算中..."
+                    f"`{eta:.1f}`秒" if progress > 0.1 or total_diff > 10 else "計算中..."
                 )
                 if progress < 0.5:
                     g = int(510 * progress)
                 else:
                     r = int(510 * (1 - progress))
-                asyncio.create_task(self._edit_progress_message(
-                    Embed(
-                        title="擷取內文中...",
-                        description=f"第{index}/{chapter_count}章 {progress*100:.1f}%```{bar}```預計剩餘時間: {eta_display}",  # noqa
-                        color=Color.from_rgb(r, g, 0),
-                    ),
-                    None if eta < 4 else True,
-                ))
+                asyncio.create_task(
+                    self._edit_progress_message(
+                        Embed(
+                            title="擷取內文中...",
+                            description=f"第{index}/{chapter_count}章 {progress*100:.1f}%```{bar}```預計剩餘時間: {eta_display}",  # noqa
+                            color=Color.from_rgb(r, g, 0),
+                        ),
+                        None if eta < 4 else True,
+                    )
+                )
 
         with open(f"./data/{self.code}.txt", "w", encoding="utf-8") as file:
             file.write(content)
@@ -208,7 +211,8 @@ class Czbooks:
                         comment["nickname"],
                         comment["message"],
                         comment["date"],
-                    ) for comment in items
+                    )
+                    for comment in items
                 ]
 
                 if not (page := data.get("next")):
@@ -230,16 +234,15 @@ class Czbooks:
         embed.add_field(
             name="書本簡述",
             value=(
-                self.description if len(self.description) < 1024
+                self.description
+                if len(self.description) < 1024
                 else self.description[:1020] + " ..."
             ),
             inline=False,
         )
         if self.hashtags:
             hashtag_text = ""
-            hashtag_len = len(
-                last_hashtag := str(self.hashtags[-1])
-            )
+            hashtag_len = len(last_hashtag := str(self.hashtags[-1]))
             for hashtag in self.hashtags[:-1]:
                 hashtag_len += len(text := f"{hashtag}、")
                 if hashtag_len > 1018:
@@ -327,24 +330,15 @@ def load_from_json(data: dict) -> Czbooks:
         HyperLink(*data.get("category").values()),
         bool(data.get("words_count")),
         data.get("words_count"),
-        [
-            HyperLink(*hashtag.values())
-            for hashtag in data.get("hashtags")
-        ],
-        [
-            HyperLink(*chapter.values())
-            for chapter in data.get("chapter_list")
-        ],
+        [HyperLink(*hashtag.values()) for hashtag in data.get("hashtags")],
+        [HyperLink(*chapter.values()) for chapter in data.get("chapter_list")],
         [],
     )
 
 
 with open("./data/books.json", "r", encoding="utf-8") as file:
     data: dict[str, dict] = json.load(file)
-    books_cache = {
-        code: load_from_json(detail)
-        for code, detail in data.items()
-    }
+    books_cache = {code: load_from_json(detail) for code, detail in data.items()}
 
 
 def edit_data(book: Czbooks):
@@ -376,7 +370,7 @@ async def fetch_book(code: str) -> Czbooks:
     category_a = state_children[9].contents[0]
     category = HyperLink(
         category_a.text,
-        "https:"+category_a["href"],
+        "https:" + category_a["href"],
     )
     # basic info
     detail_div = soup.find("div", class_="novel-detail")
@@ -386,25 +380,33 @@ async def fetch_book(code: str) -> Czbooks:
     if not thumbnail.startswith("https://img.czbooks.net"):
         thumbnail = None
     author_span = detail_div.find("span", class_="author").contents[1]
-    author = HyperLink(author_span.text, "https:"+author_span["href"])
+    author = HyperLink(author_span.text, "https:" + author_span["href"])
     # hashtags
     hashtags = [
-        HyperLink(hashtag.text, "https:"+hashtag["href"])
-        for hashtag in soup.find(
-            "ul", class_="hashtag"
-        ).find_all("a")[:-1]
+        HyperLink(hashtag.text, "https:" + hashtag["href"])
+        for hashtag in soup.find("ul", class_="hashtag").find_all("a")[:-1]
     ]
     # chapter list
     chapter_lists = [
-        HyperLink(chapter.text, "https:"+chapter["href"])
-        for chapter in soup.find(
-            "ul", id="chapter-list"
-        ).find_all("a")
+        HyperLink(chapter.text, "https:" + chapter["href"])
+        for chapter in soup.find("ul", id="chapter-list").find_all("a")
     ]
 
     book = Czbooks(
-        code, title, description, thumbnail, None, author, state, views, category,
-        False, 0, hashtags, chapter_lists, [],
+        code,
+        title,
+        description,
+        thumbnail,
+        None,
+        author,
+        state,
+        views,
+        category,
+        False,
+        0,
+        hashtags,
+        chapter_lists,
+        [],
     )
     books_cache[code] = book
     edit_data(book)
@@ -430,11 +432,11 @@ async def search(
     page: int = 0,
 ) -> list[HyperLink]:
     if not (_by := by_dict.get(by)):
-        raise ValueError(f"Unknown value \"{by}\" of by")
+        raise ValueError(f'Unknown value "{by}" of by')
     soup = await get_html(f"https://czbooks.net/{_by}/{keyword}")
-    novel_list_ul = soup.find(
-        "ul", class_="nav novel-list style-default"
-    ).find_all("li", class_="novel-item-wrapper")
+    novel_list_ul = soup.find("ul", class_="nav novel-list style-default").find_all(
+        "li", class_="novel-item-wrapper"
+    )
 
     if not novel_list_ul:
         return None
@@ -443,5 +445,6 @@ async def search(
         HyperLink(
             novel.find("div", class_="novel-item-title").text.strip(),
             get_code(novel.find("a").get("href")),
-        ) for novel in novel_list_ul
+        )
+        for novel in novel_list_ul
     ]

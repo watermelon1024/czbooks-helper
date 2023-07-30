@@ -158,8 +158,7 @@ class InfoView(View):
         self.chapter_button.disabled = False
         self.comment_button.disabled = True
         await (
-            interaction.message.edit if update
-            else interaction.response.edit_message
+            interaction.message.edit if update else interaction.response.edit_message
         )(embed=book.comments_embed(), view=self)
 
     async def get_content_button_callback(self, interaction: Interaction):
@@ -202,13 +201,10 @@ class InfoView(View):
             await interaction.message.edit(embed=book.overview_embed())
 
     async def cancel_get_content(self, interaction: Interaction):
-        book = get_book(get_code(
-            (
-                await interaction.channel.fetch_message(
-                    interaction.message.reference.message_id
-                )
-            ).embeds[0].url
-        ))
+        message = await interaction.channel.fetch_message(
+            interaction.message.reference.message_id
+        )
+        book = get_book(get_code(message.embeds[0].url))
         if book.content_cache:
             return
 

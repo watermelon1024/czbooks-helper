@@ -42,7 +42,8 @@ class SearchCog(BaseCog):
         default="name",
     )
     async def simple_search(
-        self, ctx: ApplicationContext,
+        self,
+        ctx: ApplicationContext,
         keyword: str,
         by: Literal["name", "hashtag", "author"],
     ):
@@ -61,9 +62,7 @@ class SearchCog(BaseCog):
                 view=SearchView(self.bot, result[:20]),
             )
 
-        return await ctx.respond(
-            embed=Embed(title="無搜尋結果", color=discord.Color.red())
-        )
+        return await ctx.respond(embed=Embed(title="無搜尋結果", color=discord.Color.red()))
 
     @simple_search.error
     async def on_simple_search_error(self, ctx: ApplicationContext, error):
@@ -96,14 +95,19 @@ class SearchCog(BaseCog):
         required=False,
     )
     async def advanced_search(
-        self, ctx: ApplicationContext,
-        name: str, hashtag: str, author: str,
+        self,
+        ctx: ApplicationContext,
+        name: str,
+        hashtag: str,
+        author: str,
     ):
         return await ctx.respond(
             embed=Embed(title="暫不開放", color=discord.Color.red()),
             ephemeral=True,
         )
-        print(f"{ctx.author} used /search name: {name} hashtag: {hashtag} author: {author}")  # noqa
+        print(
+            f"{ctx.author} used /search name: {name} hashtag: {hashtag} author: {author}"
+        )  # noqa
         msg = await ctx.respond(embed=Embed(title="搜尋中，請稍後..."))
         # search by name: s, hashtag: hashtag, author: a
         novel_list: list[list[HyperLink]] = []
@@ -132,9 +136,7 @@ class SearchCog(BaseCog):
         for sub_novel_list in novel_list:
             codes = {item.link for item in sub_novel_list}
             novel_codes.intersection_update(codes)
-        novel_list_ = [
-            item for item in novel_list[0] if item.link in novel_codes
-        ]
+        novel_list_ = [item for item in novel_list[0] if item.link in novel_codes]
 
         if novel_list_:
             return await msg.edit_original_response(
@@ -143,7 +145,7 @@ class SearchCog(BaseCog):
                     description="\n".join(
                         f"{index}. [{novel.text}](https://czbooks.net/n/{novel.link})"  # noqa
                         for index, novel in enumerate(novel_list_, start=1)
-                    )
+                    ),
                 )
             )
 
@@ -176,7 +178,8 @@ class SearchView(View):
                 discord.SelectOption(
                     label=f"{index}. {novel.text}",
                     value=novel.link,
-                ) for index, novel in enumerate(options, start=1)
+                )
+                for index, novel in enumerate(options, start=1)
             ],
             row=0,
         )
