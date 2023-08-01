@@ -116,6 +116,7 @@ class Czbooks:
         self.hashtags = hashtags
         self.chapter_list = chapter_list
         self.comments = comments
+
         self.comment_last_update: float = None
         self.get_content_task: asyncio.Task = None
         self.get_content_progress_messages: list[Interaction] = []
@@ -328,20 +329,22 @@ class Czbooks:
 
 def load_from_json(data: dict) -> Czbooks:
     return Czbooks(
-        data.get("code"),
-        data.get("title"),
-        data.get("description"),
-        data.get("thumbnail"),
-        data.get("main_color"),
-        HyperLink(*data.get("author").values()),
-        data.get("state"),
-        data.get("views"),
-        HyperLink(*data.get("category").values()),
-        bool(data.get("words_count")),
-        data.get("words_count"),
-        [HyperLink(*hashtag.values()) for hashtag in data.get("hashtags")],
-        [HyperLink(*chapter.values()) for chapter in data.get("chapter_list")],
-        [],
+        code=data.get("code"),
+        title=data.get("title"),
+        description=data.get("description"),
+        thumbnail=data.get("thumbnail"),
+        theme_colors=data.get("main_color"),
+        author=HyperLink(*data.get("author").values()),
+        state=data.get("state"),
+        views=data.get("views"),
+        category=HyperLink(*data.get("category").values()),
+        content_cache=bool(data.get("words_count")),
+        words_count=data.get("words_count"),
+        hashtags=[HyperLink(*hashtag.values()) for hashtag in data.get("hashtags")],
+        chapter_list=[
+            HyperLink(*chapter.values()) for chapter in data.get("chapter_list")
+        ],
+        comments=[],
     )
 
 
@@ -405,20 +408,20 @@ async def fetch_book(code: str) -> Czbooks:
     ]
 
     book = Czbooks(
-        code,
-        title,
-        description,
-        thumbnail,
-        theme_colors,
-        author,
-        state,
-        views,
-        category,
-        False,
-        0,
-        hashtags,
-        chapter_lists,
-        [],
+        code=code,
+        title=title,
+        description=description,
+        thumbnail=thumbnail,
+        theme_colors=theme_colors,
+        author=author,
+        state=state,
+        views=views,
+        category=category,
+        content_cache=False,
+        words_count=0,
+        hashtags=hashtags,
+        chapter_list=chapter_lists,
+        comments=[],
     )
     books_cache[code] = book
     edit_data(book)
