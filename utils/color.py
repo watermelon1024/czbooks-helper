@@ -7,9 +7,14 @@ from PIL import Image
 from sklearn.cluster import KMeans
 
 
-def rgb_to_int_hex(rgb):
+def rgb_to_int_hex(rgb: tuple[int, int, int]) -> int:
     r, g, b, *_ = rgb
     return (r << 16) + (g << 8) + b
+
+
+def brightness(rgba: tuple[int, int, int, int]) -> float:
+    r, g, b, a, *_ = rgba
+    return (0.299 * r + 0.587 * g + 0.114 * b) * a / 65025
 
 
 def extract_theme_colors(
@@ -18,31 +23,33 @@ def extract_theme_colors(
 ) -> list[tuple[int, int, int, int]]:
     image_array = np.array(image.convert("RGBA"))
 
-    # 3d -> 2d array
-    flattened_image_array = image_array.reshape((-1, 4))
+    k_means = KMeans(n_clusters=num_colors, n_init="auto")
+    k_means.fit(image_array.reshape((-1, 4)))
 
-    # 使用K-means算法从图像中提取主题颜色
-    k_means = KMeans(n_clusters=num_colors, n_init="auto", algorithm="lloyd")
-    k_means.fit(flattened_image_array)
-
-    # 获取聚类中心作为主题颜色
     return k_means.cluster_centers_.astype(int).tolist()
 
 
-def get_main_colors(
+def extract_theme_light_colors(
     image: Image.Image,
     num_colors=10,
 ) -> list[tuple[int, int, int, int]]:
     base_colors = extract_theme_colors(image, num_colors)
-    sorted_colors = sorted(
-        list(
-            filter(
-                lambda x: x[4] > 355 and x[4] < 665,
-                map(lambda x: (*x, sum(x)), base_colors),
-            )
-        )
+    light_colors = sorted(
+        filter(
+            lambda x: x[4] < 0.9 and x[4] > 0.2,
+            map(lambda x: (*x, brightness(x)), base_colors),
+        ),
+        key=lambda x: x[4],
+        reverse=True,
     )
-    return sorted_colors if sorted_colors else base_colors
+    return light_colors or base_colors
+
+
+def extract_theme_light_colors_hex(
+    image: Image.Image,
+    num_colors=10,
+) -> list[int]:
+    return list(map(rgb_to_int_hex, extract_theme_light_colors(image, num_colors)))
 
 
 async def get_img_from_url(url: str) -> Image.Image:

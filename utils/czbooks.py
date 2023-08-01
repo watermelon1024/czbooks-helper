@@ -11,7 +11,7 @@ import aiohttp
 from discord import Embed, Interaction, Color, MISSING
 from bs4 import BeautifulSoup
 
-from .color import rgb_to_int_hex, get_main_colors, get_img_from_url
+from .color import extract_theme_light_colors_hex, get_img_from_url
 
 chinese_char = re.compile(r"[\u4e00-\u9fa5]")
 re_code = re.compile(r"(czbooks\.net\/n\/)([a-z0-9]+)")
@@ -387,11 +387,10 @@ async def fetch_book(code: str) -> Czbooks:
     description = detail_div.find("div", class_="description").text
     thumbnail = detail_div.find("img").get("src")
     if thumbnail.startswith("https://img.czbooks.net"):
-        theme_colors = get_main_colors(await get_img_from_url(thumbnail))
-        theme_colors_hex = list(map(rgb_to_int_hex, theme_colors))
+        theme_colors = extract_theme_light_colors_hex(await get_img_from_url(thumbnail))
     else:
         thumbnail = None
-        theme_colors_hex = None
+        theme_colors = None
     author_span = detail_div.find("span", class_="author").contents[1]
     author = HyperLink(author_span.text, "https:" + author_span["href"])
     # hashtags
@@ -410,7 +409,7 @@ async def fetch_book(code: str) -> Czbooks:
         title,
         description,
         thumbnail,
-        theme_colors_hex,
+        theme_colors,
         author,
         state,
         views,
