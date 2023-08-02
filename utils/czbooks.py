@@ -237,6 +237,7 @@ class Czbooks:
 - 狀　態：{self.state}
 - 總字數：{f'`{self.words_count}`字' if self.words_count else '`請點擊取得內文以取得字數`'}
 - 觀看數：`{self.views}`次
+- 章節數：`{len(self.chapter_list)}`章
 - 分　類：{self.category}""",
             url=f"https://czbooks.net/n/{self.code}",
             color=self.get_theme_color(),
@@ -377,7 +378,7 @@ async def fetch_book(code: str) -> Czbooks:
     # book state
     state_div = soup.find("div", class_="state")
     state_children = state_div.find_all("td")
-    state = state_children[1].text
+    state = f"{state_children[1].text} (更新時間：{state_children[7].text})"
     views = state_children[5].text
     category_a = state_children[9].contents[0]
     category = HyperLink(
