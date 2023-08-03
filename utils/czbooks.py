@@ -121,6 +121,9 @@ class Czbooks:
         self.comments = comments
         self.last_fetch_time = last_fetch_time
 
+        self._overview_embed_cache: Embed = None
+        self._chapter_embed_cache: Embed = None
+        self._comments_embed_cache: Embed = None
         self.comment_last_update: float = None
         self.get_content_task: asyncio.Task = None
         self.get_content_progress_messages: list[Interaction] = []
@@ -235,10 +238,13 @@ class Czbooks:
         )
 
     def overview_embed(self) -> Embed:
+        if self._overview_embed_cache:
+            return self._overview_embed_cache
+
         embed = Embed(
             title=self.title,
             description=f"""- 作　者：{self.author}
-- 狀　態：{self.state}
+- 狀　態：{self.state} (上次更新：{self.last_update})
 - 總字數：{f'`{self.words_count}`字' if self.words_count else '`請點擊取得內文以取得字數`'}
 - 觀看數：`{self.views}`次
 - 章節數：`{len(self.chapter_list)}`章
@@ -272,9 +278,13 @@ class Czbooks:
         if self.thumbnail:
             embed.set_thumbnail(url=self.thumbnail)
 
-        return embed
+        self._overview_embed_cache = embed
+        return self._overview_embed_cache
 
     def chapter_embed(self) -> Embed:
+        if self._chapter_embed_cache:
+            return self._chapter_embed_cache
+
         chapter_len = len(
             chapter_text_ := "、".join(
                 str(chapter) for chapter in self.chapter_list[-8:]
@@ -288,14 +298,18 @@ class Czbooks:
                 break
             chapter_text += text
 
-        return Embed(
+        self._chapter_embed_cache = Embed(
             title=f"{self.title}章節列表",
             description=chapter_text + chapter_text_,
             url=f"https://czbooks.net/n/{self.code}",
             color=self.get_theme_color(),
         )
+        return self._chapter_embed_cache
 
     def comments_embed(self) -> Embed:
+        if self._comments_embed_cache:
+            return self._comments_embed_cache
+
         embed = Embed(
             title=f"{self.title}評論列表",
             url=f"https://czbooks.net/n/{self.code}",
@@ -311,7 +325,8 @@ class Czbooks:
                 embed.remove_field(-1)
                 break
 
-        return embed
+        self._comments_embed_cache = embed
+        return self._comments_embed_cache
 
     def to_dict(self) -> dict:
         return {
@@ -329,7 +344,7 @@ class Czbooks:
             "hashtags": [hashtag.to_dict() for hashtag in self.hashtags],
             "chapter_list": [chapter.to_dict() for chapter in self.chapter_list],
             # "comments": [comment.to_dict() for comment in self.comments],
-            "last_fetch_time": self.last_fetch_time
+            "last_fetch_time": self.last_fetch_time,
         }
 
 
@@ -352,7 +367,7 @@ def load_from_json(data: dict) -> Czbooks:
             HyperLink(*chapter.values()) for chapter in data.get("chapter_list")
         ],
         comments=[],
-        last_fetch_time=data.get("last_fetch_time", 0)
+        last_fetch_time=data.get("last_fetch_time", 0),
     )
 
 
@@ -432,7 +447,7 @@ async def fetch_book(code: str) -> Czbooks:
         hashtags=hashtags,
         chapter_list=chapter_lists,
         comments=[],
-        last_fetch_time=datetime.now().timestamp()
+        last_fetch_time=datetime.now().timestamp(),
     )
     books_cache[code] = book
     edit_data(book)
