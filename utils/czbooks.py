@@ -230,7 +230,7 @@ class Czbooks:
                     break
 
         self.comments = comments
-        edit_data(self)
+        # edit_data(self)
 
     def get_theme_color(self) -> Color:
         return (
@@ -339,6 +339,7 @@ class Czbooks:
             "main_color": self.theme_colors,
             "author": self.author.to_dict(),
             "state": self.state,
+            "last_update": self.last_update,
             "views": self.views,
             "category": self.category.to_dict(),
             # "content_cache": self.content_cache,
