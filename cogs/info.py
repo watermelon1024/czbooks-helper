@@ -159,7 +159,7 @@ class InfoView(View):
         self.comment_button.disabled = True
         await (
             interaction.message.edit if update else interaction.response.edit_message
-        )(embed=book.comments_embed(), view=self)
+        )(embed=book.comments_embed(from_cache=not update), view=self)
 
     async def get_content_button_callback(self, interaction: Interaction):
         self.get_content_button.disabled = (

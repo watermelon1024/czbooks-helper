@@ -197,6 +197,7 @@ class Czbooks:
         self.words_count = words_count
         self.content_cache = True
         edit_data(self)
+        self.overview_embed(from_cache=False)
 
         return total_diff
 
