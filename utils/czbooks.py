@@ -136,7 +136,7 @@ class Czbooks:
             )
 
     async def _get_content(self) -> float:
-        content = f"{self.title}\n連結: https://czbooks.net/n/{self.code}\n作者: {self.author.text}"  # noqa
+        content = ""
         words_count = 0
         chapter_count = len(self.chapter_list)
         # 逐章爬取內容
@@ -154,14 +154,14 @@ class Czbooks:
                 ch_name = soup.find("div", class_="name")
                 # 尋找內文
                 div_content = ch_name.find_next("div", class_="content")
-                content += f"\n\n{'='*32} {ch_name.text} {'='*32}\n"
+                content += f"\n\n{'='*30} {ch_name.text} {'='*30}\n"
                 ch_words_count = len(re.findall(chinese_char, div_content.text))
                 if ch_words_count < 1024:
                     content += "(本章可能非內文)\n\n"
                 else:
                     words_count += ch_words_count
                     content += "\n"
-                content += div_content.text.strip()
+                content += div_content.text
 
                 # 計算進度
                 now_time = datetime.now().timestamp()
@@ -185,12 +185,14 @@ class Czbooks:
                             description=f"第{index}/{chapter_count}章 {progress*100:.1f}%```{bar}```預計剩餘時間: {eta_display}",  # noqa
                             color=Color.from_rgb(r, g, 0),
                         ),
-                        None if eta < 4 else True,
+                        True if eta < 4 else False,
                     )
                 )
 
         with open(f"./data/{self.code}.txt", "w", encoding="utf-8") as file:
-            file.write(content)
+            file.write(
+                f"{self.title}\n連結：https://czbooks.net/n/{self.code}\n作者：{self.author.text}總章數：{chapter_count}\n總字數：{words_count}{content}"  # noqa
+            )
 
         self.words_count = words_count
         self.content_cache = True
