@@ -237,8 +237,8 @@ class Czbooks:
             else Color.random()
         )
 
-    def overview_embed(self) -> Embed:
-        if self._overview_embed_cache:
+    def overview_embed(self, from_cache: bool = True) -> Embed:
+        if self._overview_embed_cache and from_cache:
             return self._overview_embed_cache
 
         embed = Embed(
@@ -281,8 +281,8 @@ class Czbooks:
         self._overview_embed_cache = embed
         return self._overview_embed_cache
 
-    def chapter_embed(self) -> Embed:
-        if self._chapter_embed_cache:
+    def chapter_embed(self, from_cache: bool = True) -> Embed:
+        if self._chapter_embed_cache and from_cache:
             return self._chapter_embed_cache
 
         chapter_len = len(
@@ -306,8 +306,8 @@ class Czbooks:
         )
         return self._chapter_embed_cache
 
-    def comments_embed(self) -> Embed:
-        if self._comments_embed_cache:
+    def comments_embed(self, from_cache: bool = True) -> Embed:
+        if self._comments_embed_cache and from_cache:
             return self._comments_embed_cache
 
         embed = Embed(
