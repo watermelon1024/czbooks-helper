@@ -207,8 +207,12 @@ class InfoView(View):
         book = get_book(get_code(message.embeds[0].url))
         if book.content_cache:
             return
-
-        book.get_content_task.cancel()
+        try:
+            book.get_content_progress_messages.remove(interaction)
+        except Exception:
+            pass
+        if not book.get_content_progress_messages:
+            book.get_content_task.cancel()
         print(f"{interaction.user} cancel gets {book.title}'s content")
         await interaction.response.edit_message(
             embed=Embed(title="已取消"),
