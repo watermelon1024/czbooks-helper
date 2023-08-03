@@ -191,7 +191,11 @@ class Czbooks:
 
         with open(f"./data/{self.code}.txt", "w", encoding="utf-8") as file:
             file.write(
-                f"{self.title}\n連結：https://czbooks.net/n/{self.code}\n作者：{self.author.text}總章數：{chapter_count}\n總字數：{words_count}{content}"  # noqa
+                f"""{self.title}
+連結：https://czbooks.net/n/{self.code}
+作者：{self.author.text}
+總章數：{chapter_count}
+總字數：{words_count}{content}"""
             )
 
         self.words_count = words_count
