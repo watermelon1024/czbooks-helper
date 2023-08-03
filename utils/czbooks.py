@@ -94,6 +94,7 @@ class Czbooks:
         theme_colors: list[int] | None,
         author: HyperLink,
         state: str,
+        last_update: str,
         views: int,
         category: HyperLink,
         content_cache: bool,
@@ -101,6 +102,7 @@ class Czbooks:
         hashtags: list[HyperLink],
         chapter_list: list[HyperLink],
         comments: list[Comment],
+        last_fetch_time: float = 0,
     ) -> None:
         self.code = code
         self.title = title
@@ -109,6 +111,7 @@ class Czbooks:
         self.theme_colors = theme_colors
         self.author = author
         self.state = state
+        self.last_update = last_update
         self.views = views
         self.category = category
         self.content_cache = content_cache
@@ -116,6 +119,7 @@ class Czbooks:
         self.hashtags = hashtags
         self.chapter_list = chapter_list
         self.comments = comments
+        self.last_fetch_time = last_fetch_time
 
         self.comment_last_update: float = None
         self.get_content_task: asyncio.Task = None
@@ -325,6 +329,7 @@ class Czbooks:
             "hashtags": [hashtag.to_dict() for hashtag in self.hashtags],
             "chapter_list": [chapter.to_dict() for chapter in self.chapter_list],
             # "comments": [comment.to_dict() for comment in self.comments],
+            "last_fetch_time": self.last_fetch_time
         }
 
 
@@ -337,6 +342,7 @@ def load_from_json(data: dict) -> Czbooks:
         theme_colors=data.get("main_color"),
         author=HyperLink(*data.get("author").values()),
         state=data.get("state"),
+        last_update=data.get("last_update"),
         views=data.get("views"),
         category=HyperLink(*data.get("category").values()),
         content_cache=bool(data.get("words_count")),
@@ -346,6 +352,7 @@ def load_from_json(data: dict) -> Czbooks:
             HyperLink(*chapter.values()) for chapter in data.get("chapter_list")
         ],
         comments=[],
+        last_fetch_time=data.get("last_fetch_time", 0)
     )
 
 
@@ -378,7 +385,8 @@ async def fetch_book(code: str) -> Czbooks:
     # book state
     state_div = soup.find("div", class_="state")
     state_children = state_div.find_all("td")
-    state = f"{state_children[1].text} (更新時間：{state_children[7].text})"
+    state = state_children[1].text
+    last_update = state_children[7].text
     views = state_children[5].text
     category_a = state_children[9].contents[0]
     category = HyperLink(
@@ -416,6 +424,7 @@ async def fetch_book(code: str) -> Czbooks:
         theme_colors=theme_colors,
         author=author,
         state=state,
+        last_update=last_update,
         views=views,
         category=category,
         content_cache=False,
@@ -423,6 +432,7 @@ async def fetch_book(code: str) -> Czbooks:
         hashtags=hashtags,
         chapter_list=chapter_lists,
         comments=[],
+        last_fetch_time=datetime.now().timestamp()
     )
     books_cache[code] = book
     edit_data(book)
