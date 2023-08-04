@@ -8,7 +8,7 @@ from typing import Literal
 
 import aiohttp
 
-from discord import Embed, Message, Color, MISSING
+from discord import Embed, Message, InteractionMessage, Color, MISSING
 from bs4 import BeautifulSoup
 
 from .color import extract_theme_light_colors_hex, get_img_from_url
@@ -126,7 +126,7 @@ class Czbooks:
         self._comments_embed_cache: Embed = None
         self.comment_last_update: float = None
         self.get_content_task: asyncio.Task = None
-        self.get_content_progress_messages: dict[str, Message] = {}
+        self.get_content_progress_messages: dict[str, InteractionMessage] = {}
 
     async def _edit_progress_message(self, embed: Embed, delete_view: bool) -> None:
         for msg in self.get_content_progress_messages.values():
@@ -205,11 +205,10 @@ class Czbooks:
 
         return total_diff
 
-    def get_content(self, msg: Message) -> asyncio.Task[float]:
-        self.get_content_progress_messages[str(msg.id)] = msg
-        if self.get_content_task:
-            return self.get_content_task
-        self.get_content_task = asyncio.create_task(self._get_content())
+    def get_content(self, message: InteractionMessage) -> asyncio.Task[float]:
+        self.get_content_progress_messages[str(message.id)] = message
+        if not self.get_content_task:
+            self.get_content_task = asyncio.create_task(self._get_content())
         return self.get_content_task
 
     async def update_comment(self):

@@ -175,6 +175,7 @@ class InfoView(View):
                 file=discord.File(Path(f"./data/{book.code}.txt")),
             )
 
+        print(f"{interaction.user} gets {book.title}'s content")
         content_msg = await interaction.response.send_message(
             embed=Embed(
                 title="擷取內文中...",
@@ -182,9 +183,9 @@ class InfoView(View):
             ),
             view=self.cancel_get_content_view,
         )
-        print(f"{interaction.user} gets {book.title}'s content")
+        msg = await content_msg.original_response()
         try:
-            time_taken = await book.get_content(content_msg.message)
+            time_taken = await book.get_content(msg)
             print(f"{book.title} total words: {book.words_count}.")
         except asyncio.CancelledError:
             book.words_count = 0
