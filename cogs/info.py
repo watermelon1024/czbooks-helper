@@ -207,10 +207,7 @@ class InfoView(View):
         book = get_book(get_code(message.embeds[0].url))
         if book.content_cache:
             return
-        try:
-            book.get_content_progress_messages.remove(interaction)
-        except Exception:
-            pass
+        book.get_content_progress_messages.pop(str(interaction.message.id), None)
         if not book.get_content_progress_messages:
             book.get_content_task.cancel()
         print(f"{interaction.user} cancel gets {book.title}'s content")
