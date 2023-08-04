@@ -184,7 +184,7 @@ class InfoView(View):
         )
         print(f"{interaction.user} gets {book.title}'s content")
         try:
-            time_taken = await book.get_content(content_msg)
+            time_taken = await book.get_content(content_msg.message)
             print(f"{book.title} total words: {book.words_count}.")
         except asyncio.CancelledError:
             book.words_count = 0
