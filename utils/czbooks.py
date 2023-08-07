@@ -195,7 +195,8 @@ class Czbooks:
 連結：https://czbooks.net/n/{self.code}
 作者：{self.author.text}
 總章數：{chapter_count}
-總字數：{words_count}{content}"""
+總字數：{words_count}
+{content}"""
             )
 
         self.words_count = words_count
@@ -245,12 +246,13 @@ class Czbooks:
 
     def overview_embed(self, from_cache: bool = True) -> Embed:
         if self._overview_embed_cache and from_cache:
+            self._overview_embed_cache.color = self.get_theme_color()
             return self._overview_embed_cache
 
         embed = Embed(
             title=self.title,
             description=f"""- 作　者：{self.author}
-- 狀　態：{self.state} (上次更新：{self.last_update})
+- 狀　態：{self.state} ({self.last_update}更新)
 - 總字數：{f'`{self.words_count}`字' if self.words_count else '`請點擊取得內文以取得字數`'}
 - 觀看數：`{self.views}`次
 - 章節數：`{len(self.chapter_list)}`章
@@ -289,6 +291,7 @@ class Czbooks:
 
     def chapter_embed(self, from_cache: bool = True) -> Embed:
         if self._chapter_embed_cache and from_cache:
+            self._chapter_embed_cache.color = self.get_theme_color()
             return self._chapter_embed_cache
 
         chapter_len = len(
@@ -314,6 +317,7 @@ class Czbooks:
 
     def comments_embed(self, from_cache: bool = True) -> Embed:
         if self._comments_embed_cache and from_cache:
+            self._comments_embed_cache.color = self.get_theme_color()
             return self._comments_embed_cache
 
         embed = Embed(
