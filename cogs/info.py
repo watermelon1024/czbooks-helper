@@ -1,5 +1,3 @@
-import asyncio
-
 from pathlib import Path
 from datetime import datetime
 
@@ -15,6 +13,7 @@ from utils.czbooks import (
     get_or_fetch_book,
     NotFoundError,
 )
+from utils.discord import get_or_fetch_message_from_reference
 
 
 class InfoCog(BaseCog):
@@ -184,27 +183,10 @@ class InfoView(View):
             view=self.cancel_get_content_view,
         )
         msg = await content_msg.original_response()
-        try:
-            time_taken = await book.get_content(msg)
-            print(f"{book.title} total words: {book.words_count}.")
-        except asyncio.CancelledError:
-            book.words_count = 0
-            self.get_content_button.disabled = False
-            return await interaction.message.edit(view=self)
-
-        await content_msg.edit_original_response(
-            content=f"擷取成功，耗時`{time_taken:.1f}`秒\n- 書名: {book.title}\n- 總字數: `{book.words_count}`字",  # noqa
-            embed=None,
-            view=None,
-            file=discord.File(Path(f"./data/{book.code}.txt")),
-        )
-        if interaction.message.components[0].children[0].disabled:
-            await interaction.message.edit(embed=book.overview_embed())
+        book.get_content(msg)
 
     async def cancel_get_content(self, interaction: Interaction):
-        message = await interaction.channel.fetch_message(
-            interaction.message.reference.message_id
-        )
+        message = await get_or_fetch_message_from_reference(interaction.message)
         book = get_book(get_code(message.embeds[0].url))
         if book.content_cache:
             return
@@ -217,6 +199,8 @@ class InfoView(View):
             view=None,
             delete_after=3,
         )
+        self.get_content_button.disabled = False
+        await message.edit(view=self)
 
 
 def setup(bot: Bot):

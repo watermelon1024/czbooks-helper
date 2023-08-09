@@ -3,15 +3,17 @@ import json
 import random
 import re
 
+from pathlib import Path
 from datetime import datetime
 from typing import Literal
 
 import aiohttp
 
-from discord import Embed, Message, InteractionMessage, Color, MISSING
+from discord import Embed, File, InteractionMessage, Color, MISSING
 from bs4 import BeautifulSoup
 
 from .color import extract_theme_light_colors_hex, get_img_from_url
+from .discord import get_or_fetch_message_from_reference
 
 chinese_char = re.compile(r"[\u4e00-\u9fa5]")
 re_code = re.compile(r"(czbooks\.net\/n\/)([a-z0-9]+)")
@@ -135,7 +137,7 @@ class Czbooks:
                 view=None if delete_view else MISSING,
             )
 
-    async def _get_content(self) -> float:
+    async def _get_content(self) -> None:
         content = ""
         words_count = 0
         chapter_count = len(self.chapter_list)
@@ -202,11 +204,20 @@ class Czbooks:
         self.words_count = words_count
         self.content_cache = True
         edit_data(self)
+
+        print(f"{self.title} total words: {words_count}.")
+        content = (
+            f"擷取成功，耗時`{total_diff:.1f}`秒\n- 書名: {self.title}\n- 總字數: `{words_count}`字"
+        )
+        book_file = File(Path(f"./data/{self.code}.txt"))
         self.overview_embed(from_cache=False)
+        for msg in self.get_content_progress_messages.values():
+            await msg.edit(content=content, embed=None, view=None, file=book_file)
+            (await get_or_fetch_message_from_reference(msg)).edit(
+                embed=self.overview_embed()
+            )
 
-        return total_diff
-
-    def get_content(self, message: InteractionMessage) -> asyncio.Task[float]:
+    def get_content(self, message: InteractionMessage) -> asyncio.Task:
         self.get_content_progress_messages[str(message.id)] = message
         if not self.get_content_task:
             self.get_content_task = asyncio.create_task(self._get_content())
