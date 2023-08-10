@@ -1,5 +1,4 @@
 from pathlib import Path
-from datetime import datetime
 
 import discord
 
@@ -14,6 +13,7 @@ from utils.czbooks import (
     NotFoundError,
 )
 from utils.discord import get_or_fetch_message_from_reference
+from utils.time import now_timestamp
 
 
 class InfoCog(BaseCog):
@@ -139,7 +139,7 @@ class InfoView(View):
 
         book = await get_or_fetch_book(get_code(interaction.message.embeds[0].url))
 
-        now_time = datetime.now().timestamp()
+        now_time = now_timestamp()
         update = False
         if (not book.comment_last_update) or (
             now_time - book.comment_last_update > 600

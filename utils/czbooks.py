@@ -4,7 +4,6 @@ import random
 import re
 
 from pathlib import Path
-from datetime import datetime
 from typing import Literal
 
 import aiohttp
@@ -14,6 +13,7 @@ from bs4 import BeautifulSoup
 
 from .color import extract_theme_light_colors_hex, get_img_from_url
 from .discord import get_or_fetch_message_from_reference
+from .time import now_timestamp
 
 chinese_char = re.compile(r"[\u4e00-\u9fa5]")
 re_code = re.compile(r"(czbooks\.net\/n\/)([a-z0-9]+)")
@@ -142,7 +142,7 @@ class Czbooks:
         words_count = 0
         chapter_count = len(self.chapter_list)
         # 逐章爬取內容
-        start_time = datetime.now().timestamp()
+        start_time = now_timestamp()
         last_time = start_time
         r, g = 255, 0
         async with aiohttp.ClientSession() as session:
@@ -166,7 +166,7 @@ class Czbooks:
                 content += div_content.text
 
                 # 計算進度
-                now_time = datetime.now().timestamp()
+                now_time = now_timestamp()
                 total_diff = now_time - start_time
                 if now_time - last_time < 2:
                     continue
@@ -469,7 +469,7 @@ async def fetch_book(code: str) -> Czbooks:
         hashtags=hashtags,
         chapter_list=chapter_lists,
         comments=[],
-        last_fetch_time=datetime.now().timestamp(),
+        last_fetch_time=now_timestamp(),
     )
     books_cache[code] = book
     edit_data(book)
