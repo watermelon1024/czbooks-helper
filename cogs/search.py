@@ -54,7 +54,7 @@ class SearchCog(BaseCog):
                 embed=Embed(
                     title="搜尋結果",
                     description="\n".join(
-                        f"{index}. [{novel.text}](https://czbooks.net/n/{novel.link})"  # noqa
+                        f"{index}. [{novel.text}](https://czbooks.net/n/{novel.url})"  # noqa
                         for index, novel in enumerate(result[:20], start=1)
                     ),
                     color=discord.Color.green(),
@@ -177,7 +177,7 @@ class SearchView(View):
             options=[
                 discord.SelectOption(
                     label=f"{index}. {novel.text}",
-                    value=novel.link,
+                    value=novel.url,
                 )
                 for index, novel in enumerate(options, start=1)
             ],

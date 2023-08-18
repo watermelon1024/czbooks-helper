@@ -53,17 +53,17 @@ async def get_html(link: str) -> BeautifulSoup:
 
 
 class HyperLink:
-    def __init__(self, text: str, link: str) -> None:
+    def __init__(self, text: str, url: str) -> None:
         self.text = text
-        self.link = link
+        self.url = url
 
     def __str__(self) -> str:
-        return f"[{self.text}]({self.link})"
+        return f"[{self.text}]({self.url})"
 
     def to_dict(self) -> dict:
         return {
             "text": self.text,
-            "link": self.link,
+            "link": self.url,
         }
 
 
@@ -148,10 +148,10 @@ class Czbooks:
         async with aiohttp.ClientSession() as session:
             for index, ch in enumerate(self.chapter_list, start=1):
                 try:
-                    async with session.get(ch.link) as response:
+                    async with session.get(ch.url) as response:
                         soup = BeautifulSoup(await response.text(), "html.parser")
                 except Exception as e:
-                    print(f"Error when getting {ch.link}: {e}")
+                    print(f"Error when getting {ch.url}: {e}")
                 # 尋找章節
                 ch_name = soup.find("div", class_="name")
                 # 尋找內文
