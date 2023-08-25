@@ -344,7 +344,8 @@ class Czbooks:
             "last_fetch_time": self.last_fetch_time,
         }
 
-    def load_from_json(self, data: dict) -> "Czbooks":
+    @classmethod
+    def load_from_json(cls: "Czbooks", data: dict) -> "Czbooks":
         return Czbooks(
             code=data.get("code"),
             title=data.get("title"),
