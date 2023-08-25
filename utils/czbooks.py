@@ -4,28 +4,17 @@ import random
 import re
 
 from pathlib import Path
-from typing import Literal
 
 import aiohttp
 
 from discord import Embed, File, InteractionMessage, Color, MISSING
 from bs4 import BeautifulSoup
 
-from .color import extract_theme_light_colors_hex, get_img_from_url
+from . import api
 from .discord import get_or_fetch_message_from_reference
 from .time import now_timestamp
 
 chinese_char = re.compile(r"[\u4e00-\u9fa5]")
-re_code = re.compile(r"(czbooks\.net\/n\/)([a-z0-9]+)")
-
-
-class NotFoundError(Exception):
-    """
-    Book not found.
-    """
-
-    def __init__(self):
-        super().__init__()
 
 
 def progress_bar(
@@ -36,20 +25,6 @@ def progress_bar(
     percentage = current / total
     filled_length = int(bar_length * percentage)
     return percentage, f"[{'='*filled_length}{' '*(bar_length-filled_length)}]"
-
-
-async def get(link: str) -> str:
-    async with aiohttp.request("GET", link) as response:
-        text = await response.text()
-    return text
-
-
-async def get_html(link: str) -> BeautifulSoup:
-    async with aiohttp.request("GET", link) as response:
-        if response.status == 404:
-            raise NotFoundError()
-        soup = BeautifulSoup(await response.text(), "html.parser")
-    return soup
 
 
 class HyperLink:
@@ -369,33 +344,42 @@ class Czbooks:
             "last_fetch_time": self.last_fetch_time,
         }
 
+    def load_from_json(self, data: dict) -> "Czbooks":
+        return Czbooks(
+            code=data.get("code"),
+            title=data.get("title"),
+            description=data.get("description"),
+            thumbnail=data.get("thumbnail"),
+            theme_colors=data.get("main_color"),
+            author=HyperLink(*data.get("author").values()),
+            state=data.get("state"),
+            last_update=data.get("last_update"),
+            views=data.get("views"),
+            category=HyperLink(*data.get("category").values()),
+            content_cache=bool(data.get("words_count")),
+            words_count=data.get("words_count"),
+            hashtags=[HyperLink(*hashtag.values()) for hashtag in data.get("hashtags")],
+            chapter_list=[
+                HyperLink(*chapter.values()) for chapter in data.get("chapter_list")
+            ],
+            comments=[],
+            last_fetch_time=data.get("last_fetch_time", 0),
+        )
 
-def load_from_json(data: dict) -> Czbooks:
-    return Czbooks(
-        code=data.get("code"),
-        title=data.get("title"),
-        description=data.get("description"),
-        thumbnail=data.get("thumbnail"),
-        theme_colors=data.get("main_color"),
-        author=HyperLink(*data.get("author").values()),
-        state=data.get("state"),
-        last_update=data.get("last_update"),
-        views=data.get("views"),
-        category=HyperLink(*data.get("category").values()),
-        content_cache=bool(data.get("words_count")),
-        words_count=data.get("words_count"),
-        hashtags=[HyperLink(*hashtag.values()) for hashtag in data.get("hashtags")],
-        chapter_list=[
-            HyperLink(*chapter.values()) for chapter in data.get("chapter_list")
-        ],
-        comments=[],
-        last_fetch_time=data.get("last_fetch_time", 0),
-    )
+
+def get_book(code: str) -> Czbooks:
+    return books_cache.get(code)
+
+
+async def get_or_fetch_book(code: str) -> Czbooks:
+    return get_book(code) or await api.fetch_book(code)
 
 
 with open("./data/books.json", "r", encoding="utf-8") as file:
     data: dict[str, dict] = json.load(file)
-    books_cache = {code: load_from_json(detail) for code, detail in data.items()}
+    books_cache = {
+        code: Czbooks.load_from_json(detail) for code, detail in data.items()
+    }
 
 
 def edit_data(book: Czbooks):
@@ -405,109 +389,3 @@ def edit_data(book: Czbooks):
         file.seek(0, 0)
         json.dump(data, file, ensure_ascii=False)
         file.truncate()
-
-
-def get_code(s: str) -> str | None:
-    if match := re.search(re_code, s):
-        return match.group(2)
-    return None
-
-
-def get_book(code: str) -> Czbooks:
-    return books_cache.get(code)
-
-
-async def fetch_book(code: str) -> Czbooks:
-    soup = await get_html(f"https://czbooks.net/n/{code}")
-    # book state
-    state_div = soup.find("div", class_="state")
-    state_children = state_div.find_all("td")
-    state = state_children[1].text
-    last_update = state_children[7].text
-    views = state_children[5].text
-    category_a = state_children[9].contents[0]
-    category = HyperLink(
-        category_a.text,
-        "https:" + category_a["href"],
-    )
-    # basic info
-    detail_div = soup.find("div", class_="novel-detail")
-    title = detail_div.find("span", class_="title").text
-    description = detail_div.find("div", class_="description").text
-    thumbnail = detail_div.find("img").get("src")
-    if thumbnail.startswith("https://img.czbooks.net"):
-        theme_colors = extract_theme_light_colors_hex(await get_img_from_url(thumbnail))
-    else:
-        thumbnail = None
-        theme_colors = None
-    author_span = detail_div.find("span", class_="author").contents[1]
-    author = HyperLink(author_span.text, "https:" + author_span["href"])
-    # hashtags
-    hashtags = [
-        HyperLink(hashtag.text, "https:" + hashtag["href"])
-        for hashtag in soup.find("ul", class_="hashtag").find_all("a")[:-1]
-    ]
-    # chapter list
-    chapter_lists = [
-        HyperLink(chapter.text, "https:" + chapter["href"])
-        for chapter in soup.find("ul", id="chapter-list").find_all("a")
-    ]
-
-    book = Czbooks(
-        code=code,
-        title=title,
-        description=description,
-        thumbnail=thumbnail,
-        theme_colors=theme_colors,
-        author=author,
-        state=state,
-        last_update=last_update,
-        views=views,
-        category=category,
-        content_cache=False,
-        words_count=0,
-        hashtags=hashtags,
-        chapter_list=chapter_lists,
-        comments=[],
-        last_fetch_time=now_timestamp(),
-    )
-    books_cache[code] = book
-    edit_data(book)
-
-    return book
-
-
-async def get_or_fetch_book(code: str) -> Czbooks:
-    return get_book(code) or await fetch_book(code)
-
-
-# search by name: s, hashtag: hashtag, author: a
-by_dict = {
-    "name": "s",
-    "hashtag": "hashtag",
-    "author": "a",
-}
-
-
-async def search(
-    keyword: str,
-    by: Literal["name", "hashtag", "author"],
-    page: int = 0,
-) -> list[HyperLink]:
-    if not (_by := by_dict.get(by)):
-        raise ValueError(f'Unknown value "{by}" of by')
-    soup = await get_html(f"https://czbooks.net/{_by}/{keyword}")
-    novel_list_ul = soup.find("ul", class_="nav novel-list style-default").find_all(
-        "li", class_="novel-item-wrapper"
-    )
-
-    if not novel_list_ul:
-        return None
-
-    return [
-        HyperLink(
-            novel.find("div", class_="novel-item-title").text.strip(),
-            get_code(novel.find("a").get("href")),
-        )
-        for novel in novel_list_ul
-    ]

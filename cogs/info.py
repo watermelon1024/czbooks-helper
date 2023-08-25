@@ -6,11 +6,12 @@ from discord import Embed, ApplicationContext, Interaction, Bot
 from discord.ui import View, Button
 
 from bot import BaseCog
+from utils import api
 from utils.czbooks import (
-    get_code,
+    # get_code,
     get_book,
     get_or_fetch_book,
-    NotFoundError,
+    # NotFoundError,
 )
 from utils.discord import get_or_fetch_message_from_reference
 from utils.time import now_timestamp
@@ -33,14 +34,14 @@ class InfoCog(BaseCog):
     async def info(self, ctx: ApplicationContext, link: str):
         print(f"{ctx.author} used /info link: {link}")
         await ctx.defer()
-        code = get_code(link) or link
+        code = api.get_code(link) or link
         try:
             book = await get_or_fetch_book(code)
             await ctx.respond(
                 embed=book.overview_embed(),
                 view=InfoView(self.bot),
             )
-        except NotFoundError:
+        except api.NotFoundError:
             await ctx.respond(
                 embed=Embed(title="未知的書本", color=discord.Color.red()),
             )
@@ -113,7 +114,7 @@ class InfoView(View):
         self.get_content_button.disabled = (
             interaction.message.components[-1].children[0].disabled
         )
-        code = get_code(interaction.message.embeds[0].url)
+        code = api.get_code(interaction.message.embeds[0].url)
         await interaction.response.edit_message(
             embed=(await get_or_fetch_book(code)).overview_embed(),
             view=self,
@@ -126,7 +127,7 @@ class InfoView(View):
         self.get_content_button.disabled = (
             interaction.message.components[-1].children[0].disabled
         )
-        code = get_code(interaction.message.embeds[0].url)
+        code = api.get_code(interaction.message.embeds[0].url)
         await interaction.response.edit_message(
             embed=(await get_or_fetch_book(code)).chapter_embed(),
             view=self,
@@ -137,7 +138,7 @@ class InfoView(View):
             interaction.message.components[-1].children[0].disabled
         )
 
-        book = await get_or_fetch_book(get_code(interaction.message.embeds[0].url))
+        book = await get_or_fetch_book(api.get_code(interaction.message.embeds[0].url))
 
         now_time = now_timestamp()
         update = False
@@ -167,7 +168,7 @@ class InfoView(View):
         self.get_content_button.disabled = True
         await interaction.message.edit(view=self)
 
-        book = await get_or_fetch_book(get_code(interaction.message.embeds[0].url))
+        book = await get_or_fetch_book(api.get_code(interaction.message.embeds[0].url))
         if book.content_cache:
             return await interaction.response.send_message(
                 content=f"- 書名: {book.title}\n- 總字數: `{book.words_count}`字",
@@ -187,7 +188,7 @@ class InfoView(View):
 
     async def cancel_get_content(self, interaction: Interaction):
         message = await get_or_fetch_message_from_reference(interaction.message)
-        book = get_book(get_code(message.embeds[0].url))
+        book = get_book(api.get_code(message.embeds[0].url))
         if book.content_cache:
             return
         book.get_content_progress_messages.pop(str(interaction.message.id), None)
