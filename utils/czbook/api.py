@@ -2,49 +2,22 @@ import re
 
 from typing import Literal
 
-import aiohttp
-
-from bs4 import BeautifulSoup
-
 from .color import extract_theme_light_colors_hex, get_img_from_url
-from .czbooks import Czbooks, HyperLink
-from .time import now_timestamp
-
-re_code = re.compile(r"(czbooks\.net\/n\/)([a-z0-9]+)")
-
-
-class NotFoundError(Exception):
-    """
-    Book not found.
-    """
-
-    def __init__(self):
-        super().__init__()
-
-
-async def get(link: str) -> str:
-    async with aiohttp.request("GET", link) as response:
-        text = await response.text()
-    return text
-
-
-async def get_html(link: str) -> BeautifulSoup:
-    async with aiohttp.request("GET", link) as response:
-        if response.status == 404:
-            raise NotFoundError()
-        soup = BeautifulSoup(await response.text(), "html.parser")
-    return soup
+from .const import RE_BOOK_CODE, DICT_SEARCH_BY
+from .czbook import Czbook
+from .http import HyperLink, get_html
+from .timestamp import now_timestamp
 
 
 def get_code(s: str) -> str | None:
-    if match := re.search(re_code, s):
+    if match := re.search(RE_BOOK_CODE, s):
         return match.group(2)
     return None
 
 
-async def fetch_book(code: str) -> Czbooks:
+async def fetch_book(code: str) -> Czbook:
     soup = await get_html(f"https://czbooks.net/n/{code}")
-    # book state
+    # state
     state_div = soup.find("div", class_="state")
     state_children = state_div.find_all("td")
     state = state_children[1].text
@@ -55,7 +28,7 @@ async def fetch_book(code: str) -> Czbooks:
         category_a.text,
         "https:" + category_a["href"],
     )
-    # basic info
+    # detail / info
     detail_div = soup.find("div", class_="novel-detail")
     title = detail_div.find("span", class_="title").text
     description = detail_div.find("div", class_="description").text
@@ -78,7 +51,7 @@ async def fetch_book(code: str) -> Czbooks:
         for chapter in soup.find("ul", id="chapter-list").find_all("a")
     ]
 
-    book = Czbooks(
+    return Czbook(
         code=code,
         title=title,
         description=description,
@@ -97,23 +70,13 @@ async def fetch_book(code: str) -> Czbooks:
         last_fetch_time=now_timestamp(),
     )
 
-    return book
-
-
-# search by name: s, hashtag: hashtag, author: a
-BY_DICT = {
-    "name": "s",
-    "hashtag": "hashtag",
-    "author": "a",
-}
-
 
 async def search(
     keyword: str,
     by: Literal["name", "hashtag", "author"],
     page: int = 0,
 ) -> list[HyperLink]:
-    if not (_by := BY_DICT.get(by)):
+    if not (_by := DICT_SEARCH_BY.get(by)):
         raise ValueError(f'Unknown value "{by}" of by')
     soup = await get_html(f"https://czbooks.net/{_by}/{keyword}")
     novel_list_ul = soup.find("ul", class_="nav novel-list style-default").find_all(
