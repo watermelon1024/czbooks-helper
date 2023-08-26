@@ -7,7 +7,7 @@ from PIL import Image
 from sklearn.cluster import KMeans
 
 
-def rgb_to_int_hex(rgb: tuple[int, int, int]) -> int:
+def rgb_to_hex(rgb: tuple[int, int, int]) -> int:
     r, g, b, *_ = rgb
     return (r << 16) + (g << 8) + b
 
@@ -49,7 +49,7 @@ def extract_theme_light_colors_hex(
     image: Image.Image,
     num_colors=10,
 ) -> list[int]:
-    return list(map(rgb_to_int_hex, extract_theme_light_colors(image, num_colors)))
+    return list(map(rgb_to_hex, extract_theme_light_colors(image, num_colors)))
 
 
 async def get_img_from_url(url: str) -> Image.Image:
