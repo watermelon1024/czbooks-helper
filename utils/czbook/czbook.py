@@ -1,5 +1,7 @@
 from discord import Embed, Colour
 
+from . import utils
+
 from .comment import Comment, update_comments, comments_embed
 from .color import get_random_theme_color
 from .http import HyperLink
@@ -51,27 +53,56 @@ class Czbook:
     def get_theme_color(self) -> Colour:
         return get_random_theme_color(self.theme_colors)
 
+    def overview_embed(self, from_cache: bool = True) -> Embed:
+        if self._overview_embed_cache and from_cache:
+            self._overview_embed_cache.color = self.get_theme_color()
+            return self._overview_embed_cache
+
+        embed = Embed(
+            title=self.title,
+            description=f"""- 作　者：{self.author}
+- 狀　態：{self.state} ({self.last_update}更新)
+- 總字數：{f'`{self.words_count}`字' if self.words_count else '`請點擊取得內文以取得字數`'}
+- 觀看數：`{self.views}`次
+- 章節數：`{len(self.chapter_list)}`章
+- 分　類：{self.category}""",
+            url=f"https://czbooks.net/n/{self.code}",
+            color=self.get_theme_color(),
+        )
+        embed.add_field(
+            name="書本簡述",
+            value=(
+                self.description
+                if len(self.description) < 1024
+                else self.description[:1021] + "⋯⋯"
+            ),
+            inline=False,
+        )
+        embed.add_field(
+            name="標籤",
+            value=(
+                utils.hyper_link_list_to_str(self.hashtags, 1024, "、", "⋯⋯")
+                if self.hashtags
+                else "尚無標籤"
+            ),
+            inline=False,
+        )
+        if self.thumbnail:
+            embed.set_thumbnail(url=self.thumbnail)
+
+        self._overview_embed_cache = embed
+        return self._overview_embed_cache
+
     def chapter_embed(self, from_cache: bool = True) -> Embed:
         if self._chapter_embed_cache and from_cache:
             self._chapter_embed_cache.color = self.get_theme_color()
             return self._chapter_embed_cache
 
-        chapter_len = len(
-            chapter_text_ := "、".join(
-                str(chapter) for chapter in self.chapter_list[-8:]
-            )
-        )
-        chapter_text = ""
-        for chapter in self.chapter_list[:-8]:
-            chapter_len += len(text := f"{chapter}、")
-            if chapter_len > 4094:
-                chapter_text += "⋯⋯、"
-                break
-            chapter_text += text
-
         self._chapter_embed_cache = Embed(
             title=f"{self.title}章節列表",
-            description=chapter_text + chapter_text_,
+            description=utils.hyper_link_list_to_str(
+                self.chapter_list, 4096, "、", "⋯⋯"
+            ),
             url=f"https://czbooks.net/n/{self.code}",
             color=self.get_theme_color(),
         )
