@@ -1,6 +1,7 @@
-from discord import Embed
+from discord import Embed, Colour
 
 from .comment import Comment, update_comments, comments_embed
+from .color import get_random_theme_color
 from .http import HyperLink
 from .timestamp import now_timestamp
 
@@ -46,6 +47,35 @@ class Czbook:
         self._chapter_embed_cache: Embed = None
         self._comments_embed_cache: Embed = None
         self._comment_last_update: float = None
+
+    def get_theme_color(self) -> Colour:
+        return get_random_theme_color(self.theme_colors)
+
+    def chapter_embed(self, from_cache: bool = True) -> Embed:
+        if self._chapter_embed_cache and from_cache:
+            self._chapter_embed_cache.color = self.get_theme_color()
+            return self._chapter_embed_cache
+
+        chapter_len = len(
+            chapter_text_ := "、".join(
+                str(chapter) for chapter in self.chapter_list[-8:]
+            )
+        )
+        chapter_text = ""
+        for chapter in self.chapter_list[:-8]:
+            chapter_len += len(text := f"{chapter}、")
+            if chapter_len > 4094:
+                chapter_text += "⋯⋯、"
+                break
+            chapter_text += text
+
+        self._chapter_embed_cache = Embed(
+            title=f"{self.title}章節列表",
+            description=chapter_text + chapter_text_,
+            url=f"https://czbooks.net/n/{self.code}",
+            color=self.get_theme_color(),
+        )
+        return self._chapter_embed_cache
 
     async def comments_embed(self, update_when_out_of_date: bool = True):
         if (
