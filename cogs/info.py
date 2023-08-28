@@ -2,19 +2,13 @@ from pathlib import Path
 
 import discord
 
-from discord import Embed, ApplicationContext, Interaction, Bot
+from discord import Embed, ApplicationContext, Interaction
 from discord.ui import View, Button
 
-from bot import BaseCog
-from utils import api
-from utils.czbooks import (
-    # get_code,
-    get_book,
-    get_or_fetch_book,
-    # NotFoundError,
-)
+from bot import BaseCog, Bot
+from utils import czbook
 from utils.discord import get_or_fetch_message_from_reference
-from utils.time import now_timestamp
+from utils.czbook.timestamp import now_timestamp
 
 
 class InfoCog(BaseCog):
@@ -34,14 +28,15 @@ class InfoCog(BaseCog):
     async def info(self, ctx: ApplicationContext, link: str):
         print(f"{ctx.author} used /info link: {link}")
         await ctx.defer()
-        code = api.get_code(link) or link
+        code = czbook.get_code(link) or link
         try:
-            book = await get_or_fetch_book(code)
+            book = await self.bot.get_or_fetch_book(code)
+            self.bot.add_cache(book)
             await ctx.respond(
                 embed=book.overview_embed(),
                 view=InfoView(self.bot),
             )
-        except api.NotFoundError:
+        except czbook.BookNotFoundError:
             await ctx.respond(
                 embed=Embed(title="未知的書本", color=discord.Color.red()),
             )
@@ -114,9 +109,9 @@ class InfoView(View):
         self.get_content_button.disabled = (
             interaction.message.components[-1].children[0].disabled
         )
-        code = api.get_code(interaction.message.embeds[0].url)
+        code = czbook.get_code(interaction.message.embeds[0].url)
         await interaction.response.edit_message(
-            embed=(await get_or_fetch_book(code)).overview_embed(),
+            embed=(await self.bot.get_or_fetch_book(code)).overview_embed(),
             view=self,
         )
 
@@ -127,9 +122,9 @@ class InfoView(View):
         self.get_content_button.disabled = (
             interaction.message.components[-1].children[0].disabled
         )
-        code = api.get_code(interaction.message.embeds[0].url)
+        code = czbook.get_code(interaction.message.embeds[0].url)
         await interaction.response.edit_message(
-            embed=(await get_or_fetch_book(code)).chapter_embed(),
+            embed=(await self.bot.get_or_fetch_book(code)).chapter_embed(),
             view=self,
         )
 
@@ -137,29 +132,12 @@ class InfoView(View):
         self.get_content_button.disabled = (
             interaction.message.components[-1].children[0].disabled
         )
+        await interaction.response.defer()
 
-        book = await get_or_fetch_book(api.get_code(interaction.message.embeds[0].url))
-
-        now_time = now_timestamp()
-        update = False
-        if (not book.comment_last_update) or (
-            now_time - book.comment_last_update > 600
-        ):
-            update = True
-            self.disable_all_items(exclusions=[self.get_content_button])
-            await interaction.response.edit_message(
-                embed=Embed(title="讀取評論中..."),
-                view=self,
-            )
-            book.comment_last_update = now_time
-            await book.update_comment()
-
-        self.overview_button.disabled = False
-        self.chapter_button.disabled = False
-        self.comment_button.disabled = True
-        await (
-            interaction.message.edit if update else interaction.response.edit_message
-        )(embed=book.comments_embed(from_cache=not update), view=self)
+        book = await self.bot.get_or_fetch_book(
+            czbook.get_code(interaction.message.embeds[0].url)
+        )
+        await interaction.response.edit_message(embed=await book.comments_embed())
 
     async def get_content_button_callback(self, interaction: Interaction):
         self.get_content_button.disabled = (
