@@ -93,7 +93,7 @@ class GetContent:
                     print(f"Error when getting {ch.url}: {e}")
                     content += f"\n\n{'='*30} 第{index}章擷取失敗 {'='*30}\n\n"
 
-        book.words_count = word_count
+        book.word_count = word_count
         with open(f"./data/{book.code}.txt", "w", encoding="utf-8") as file:
             file.write(
                 f"""{book.title}

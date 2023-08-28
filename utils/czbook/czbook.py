@@ -22,7 +22,7 @@ class Czbook:
         views: int,
         category: HyperLink,
         content_cache: bool,
-        words_count: int,
+        word_count: int,
         hashtags: list[HyperLink],
         chapter_list: list[HyperLink],
         comments: list[Comment],
@@ -39,7 +39,7 @@ class Czbook:
         self.views = views
         self.category = category
         self.content_cache = content_cache
-        self.words_count = words_count
+        self.word_count = word_count
         self.hashtags = hashtags
         self.chapter_list = chapter_list
         self.comments = comments
@@ -63,7 +63,7 @@ class Czbook:
             title=self.title,
             description=f"""- 作　者：{self.author}
 - 狀　態：{self.state} ({self.last_update}更新)
-- 總字數：{f'`{self.words_count}`字' if self.words_count else '`請點擊取得內文以取得字數`'}
+- 總字數：{f'`{self.word_count}`字' if self.word_count else '`請點擊取得內文以取得字數`'}
 - 觀看數：`{self.views}`次
 - 章節數：`{len(self.chapter_list)}`章
 - 分　類：{self.category}""",
@@ -149,7 +149,7 @@ class Czbook:
             "views": self.views,
             "category": self.category.to_dict(),
             # "content_cache": self.content_cache,
-            "words_count": self.words_count,
+            "words_count": self.word_count,
             "hashtags": [hashtag.to_dict() for hashtag in self.hashtags],
             "chapter_list": [chapter.to_dict() for chapter in self.chapter_list],
             # "comments": [comment.to_dict() for comment in self.comments],
@@ -170,7 +170,7 @@ def load_from_json(data: dict) -> Czbook:
         views=data.get("views"),
         category=HyperLink(*data.get("category").values()),
         content_cache=bool(data.get("words_count")),
-        words_count=data.get("words_count"),
+        word_count=data.get("words_count"),
         hashtags=[HyperLink(*hashtag.values()) for hashtag in data.get("hashtags")],
         chapter_list=[
             HyperLink(*chapter.values()) for chapter in data.get("chapter_list")

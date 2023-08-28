@@ -151,7 +151,7 @@ class InfoView(View):
         )
         if book.content_cache:
             return await interaction.response.send_message(
-                content=f"- 書名: {book.title}\n- 總字數: `{book.words_count}`字",
+                content=f"- 書名: {book.title}\n- 總字數: `{book.word_count}`字",
                 file=discord.File(Path(f"./data/{book.code}.txt")),
             )
 
@@ -186,7 +186,7 @@ class InfoView(View):
             )
 
         await msg.edit(
-            content=f"- 書名: {book.title}\n- 總字數: `{book.words_count}`字",
+            content=f"- 書名: {book.title}\n- 總字數: `{book.word_count}`字",
             file=discord.File(Path(f"./data/{book.code}.txt")),
             embed=None,
         )

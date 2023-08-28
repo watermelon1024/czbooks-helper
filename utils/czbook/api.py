@@ -68,7 +68,7 @@ async def fetch_book(code: str) -> "Czbook":
         views=views,
         category=category,
         content_cache=False,
-        words_count=0,
+        word_count=0,
         hashtags=hashtags,
         chapter_list=chapter_lists,
         comments=[],
