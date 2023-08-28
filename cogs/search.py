@@ -2,15 +2,11 @@ from typing import Literal
 
 import discord
 
-from discord import Embed, ApplicationContext, Interaction, Bot, OptionChoice
+from discord import Embed, ApplicationContext, Interaction, OptionChoice
 from discord.ui import View, Select
 
-from bot import BaseCog
-from utils.czbooks import (
-    HyperLink,
-    get_or_fetch_book,
-    search,
-)
+from bot import BaseCog, Bot
+from utils import czbook
 from cogs.info import InfoView
 
 
@@ -49,7 +45,7 @@ class SearchCog(BaseCog):
     ):
         print(f"{ctx.author} used /search keyword: {keyword} by: {by}")
         await ctx.defer()
-        if result := await search(keyword, by):
+        if result := await czbook.search(keyword, by):
             return await ctx.respond(
                 embed=Embed(
                     title="搜尋結果",
@@ -110,17 +106,17 @@ class SearchCog(BaseCog):
         )  # noqa
         msg = await ctx.respond(embed=Embed(title="搜尋中，請稍後..."))
         # search by name: s, hashtag: hashtag, author: a
-        novel_list: list[list[HyperLink]] = []
+        novel_list: list[list[czbook.HyperLink]] = []
         page = 0
         while True:
             if name:
-                if name_list := await search(name, "s", page):
+                if name_list := await czbook.search(name, "s", page):
                     novel_list.append(name_list)
             if hashtag:
-                if hashtag_list := await search(hashtag, "hashtag", page):
+                if hashtag_list := await czbook.search(hashtag, "hashtag", page):
                     novel_list.append(hashtag_list)
             if author:
-                if author_list := await search(author, "a", page):
+                if author_list := await czbook.search(author, "a", page):
                     novel_list.append(author_list)
 
             if not novel_list:
@@ -167,7 +163,7 @@ class SearchCog(BaseCog):
 
 
 class SearchView(View):
-    def __init__(self, bot: Bot, options: list[HyperLink] = []):
+    def __init__(self, bot: Bot, options: list[czbook.HyperLink] = []):
         super().__init__(timeout=None)
         self.bot = bot
 
@@ -191,7 +187,7 @@ class SearchView(View):
         print(f"{interaction.user} used /info link: {code}")
         await interaction.response.defer()
 
-        book = await get_or_fetch_book(code)
+        book = await self.bot.get_or_fetch_book(code)
         await interaction.followup.send(
             embed=book.overview_embed(),
             view=InfoView(self.bot),
