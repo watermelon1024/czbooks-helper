@@ -1,14 +1,14 @@
+import asyncio
 from pathlib import Path
 
 import discord
 
-from discord import Embed, ApplicationContext, Interaction
+from discord import Embed, ApplicationContext, Interaction, Colour, MISSING
 from discord.ui import View, Button
 
 from bot import BaseCog, Bot
 from utils import czbook
 from utils.discord import get_or_fetch_message_from_reference
-from utils.czbook.timestamp import now_timestamp
 
 
 class InfoCog(BaseCog):
@@ -146,7 +146,9 @@ class InfoView(View):
         self.get_content_button.disabled = True
         await interaction.message.edit(view=self)
 
-        book = await get_or_fetch_book(api.get_code(interaction.message.embeds[0].url))
+        book = await self.bot.get_or_fetch_book(
+            czbook.get_code(interaction.message.embeds[0].url)
+        )
         if book.content_cache:
             return await interaction.response.send_message(
                 content=f"- 書名: {book.title}\n- 總字數: `{book.words_count}`字",
@@ -161,17 +163,34 @@ class InfoView(View):
             ),
             view=self.cancel_get_content_view,
         )
+        stats = book.get_content()
         msg = await content_msg.original_response()
-        book.get_content(msg)
+        self.bot.get_content_msg.add(msg.id)
+        while True:
+            if msg.id not in self.bot.get_content_msg:
+                return
+            await msg.edit(
+                embed=Embed(
+                    title="擷取內文中",
+                    description=stats.get_progress(),
+                    color=Colour.from_rgb(
+                        min(int(510 * stats.percentage), 255),
+                        min(int(510 * (1 - stats.percentage)), 255),
+                        0,
+                    ),
+                ),
+                view=None if stats.eta < 2 else MISSING
+            )
+            await asyncio.sleep(1)
 
     async def cancel_get_content(self, interaction: Interaction):
         message = await get_or_fetch_message_from_reference(interaction.message)
-        book = get_book(api.get_code(message.embeds[0].url))
+        book = await self.bot.get_or_fetch_book(czbook.get_code(message.embeds[0].url))
         if book.content_cache:
             return
-        book.get_content_progress_messages.pop(str(interaction.message.id), None)
-        if not book.get_content_progress_messages:
-            book.get_content_task.cancel()
+        self.bot.get_content_msg.discard(interaction.message.id)
+        if not self.bot.get_content_msg:
+            book.cencel_get_content()
         print(f"{interaction.user} cancel gets {book.title}'s content")
         await interaction.response.edit_message(
             embed=Embed(title="已取消"),

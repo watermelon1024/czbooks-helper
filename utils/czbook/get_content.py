@@ -22,6 +22,8 @@ class GetContentState:
         self.start_time = start_time or now_timestamp()
         self.current = current
         self.total = total
+        self.percentage: float = 0
+        self.eta: float = 0
 
         self._last_update = None
         self._progress_bar_cache = None
@@ -45,6 +47,8 @@ class GetContentState:
         eta = total_diff / progress - total_diff
         eta_display = f"`{eta:.1f}`秒" if progress > 0.1 or total_diff > 10 else "計算中..."
         self._progress_bar_cache = f"第{self.current}/{self.total}章 {progress*100:.1f}%{bar}預計剩餘時間：{eta_display}"  # noqa
+        self.percentage = progress
+        self.eta = eta
         self._last_update = self.current
         return self._progress_bar_cache
 

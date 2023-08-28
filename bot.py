@@ -30,6 +30,7 @@ class Bot(discord.Bot):
         super().__init__(description, *args, **options)
         self.book_cache = book_cache
         self._last_save_cache_time = 0
+        self.get_content_msg: set = set()
 
     def add_cache(self, book: Czbook) -> None:
         self.book_cache[book.code] = book
