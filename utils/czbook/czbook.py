@@ -135,3 +135,26 @@ class Czbook:
             return
         self._get_content_state.task.cancel()
         self._get_content_state = None
+
+
+def load_from_json(data: dict) -> Czbook:
+    return Czbook(
+        code=data.get("code"),
+        title=data.get("title"),
+        description=data.get("description"),
+        thumbnail=data.get("thumbnail"),
+        theme_colors=data.get("main_color"),
+        author=HyperLink(*data.get("author").values()),
+        state=data.get("state"),
+        last_update=data.get("last_update"),
+        views=data.get("views"),
+        category=HyperLink(*data.get("category").values()),
+        content_cache=bool(data.get("words_count")),
+        words_count=data.get("words_count"),
+        hashtags=[HyperLink(*hashtag.values()) for hashtag in data.get("hashtags")],
+        chapter_list=[
+            HyperLink(*chapter.values()) for chapter in data.get("chapter_list")
+        ],
+        comments=[],
+        last_fetch_time=data.get("last_fetch_time", 0),
+    )

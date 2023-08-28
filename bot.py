@@ -1,15 +1,31 @@
 import os
+import json
+from typing import Any
 
 import discord
 
 from dotenv import load_dotenv
 
-# 載入.env檔案中的環境變數
+from utils.czbook import Czbook, load_from_json
+
 load_dotenv()
+
+book_cache: dict[str, Czbook] = {}
+
+with open("./data/books.json", "r", encoding="utf-8") as file:
+    data: dict[str, dict] = json.load(file)
+    book_cache = {code: load_from_json(detail) for code, detail in data.items()}
+
+
+class Bot(discord.Bot):
+    def __init__(self, description=None, *args, **options):
+        super().__init__(description, *args, **options)
+        self.book_cache = book_cache
 
 
 class BaseCog(discord.Cog):
-    def __init__(self, bot: discord.Bot) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
         self.bot = bot
 
 
