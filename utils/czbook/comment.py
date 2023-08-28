@@ -1,8 +1,11 @@
+from typing import TYPE_CHECKING
+
 import aiohttp
 
 from discord import Embed
 
-from .czbook import Czbook
+if TYPE_CHECKING:
+    from .czbook import Czbook
 
 
 class Comment:
@@ -30,7 +33,7 @@ class Comment:
         }
 
 
-def comments_embed(book: Czbook) -> Embed:
+def comments_embed(book: "Czbook") -> Embed:
     embed = Embed(
         title=f"{book.title}評論列表",
         url=f"https://czbooks.net/n/{book.code}",

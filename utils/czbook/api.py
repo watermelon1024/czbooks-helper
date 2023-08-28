@@ -1,12 +1,15 @@
 import re
+from typing import TYPE_CHECKING
 
 from typing import Literal
 
 from .color import extract_theme_light_colors_hex, get_img_from_url
 from .const import RE_BOOK_CODE, DICT_SEARCH_BY
-from .czbook import Czbook
 from .http import HyperLink, get_html
 from .timestamp import now_timestamp
+
+if TYPE_CHECKING:
+    from .czbook import Czbook
 
 
 def get_code(s: str) -> str | None:
@@ -15,7 +18,7 @@ def get_code(s: str) -> str | None:
     return None
 
 
-async def fetch_book(code: str) -> Czbook:
+async def fetch_book(code: str) -> "Czbook":
     soup = await get_html(f"https://czbooks.net/n/{code}")
     # state
     state_div = soup.find("div", class_="state")
