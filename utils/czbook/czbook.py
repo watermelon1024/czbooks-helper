@@ -1,9 +1,9 @@
 from discord import Embed, Colour
 
 from . import utils
-
 from .comment import Comment, update_comments, comments_embed
 from .color import get_random_theme_color
+from .get_content import GetContent, GetContentState
 from .http import HyperLink
 from .timestamp import now_timestamp
 
@@ -49,6 +49,7 @@ class Czbook:
         self._chapter_embed_cache: Embed = None
         self._comments_embed_cache: Embed = None
         self._comment_last_update: float = None
+        self._get_content_state: GetContentState = None
 
     def get_theme_color(self) -> Colour:
         return get_random_theme_color(self.theme_colors)
@@ -123,3 +124,14 @@ class Czbook:
 
     async def update_comments(self):
         self.comments = await update_comments(self.code)
+
+    def get_content(self) -> GetContentState:
+        if not self._get_content_state:
+            self._get_content_state = GetContent.start(self)
+        return self._get_content_state
+
+    def cencel_get_content(self) -> None:
+        if not self._get_content_state:
+            return
+        self._get_content_state.task.cancel()
+        self._get_content_state = None
