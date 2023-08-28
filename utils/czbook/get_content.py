@@ -7,7 +7,7 @@ import aiohttp
 from bs4 import BeautifulSoup
 
 from .const import RE_CHINESE_CHARS
-from .http import HyperLink
+from .http import HyperLink, fetch_url
 from .timestamp import now_timestamp
 
 if TYPE_CHECKING:
@@ -75,22 +75,23 @@ class GetContent:
             for index, ch in enumerate(chapter_list, start=1):
                 state.current = index
                 try:
-                    async with session.get(ch.url) as response:
-                        soup = BeautifulSoup(await response.text(), "html.parser")
+                    soup = BeautifulSoup(
+                        await fetch_url(session, ch.url), "html.parser"
+                    )
+                    ch_name = soup.find("div", class_="name")
+                    # 尋找內文
+                    div_content = ch_name.find_next("div", class_="content")
+                    content += f"\n\n{'='*30} {ch_name.text} {'='*30}\n"
+                    ch_word_count = len(re.findall(RE_CHINESE_CHARS, div_content.text))
+                    if ch_word_count < 1024:
+                        content += "(本章可能非內文)\n\n"
+                    else:
+                        word_count += ch_word_count
+                        content += "\n"
+                    content += div_content.text
                 except Exception as e:
                     print(f"Error when getting {ch.url}: {e}")
-                # 尋找章節
-                ch_name = soup.find("div", class_="name")
-                # 尋找內文
-                div_content = ch_name.find_next("div", class_="content")
-                content += f"\n\n{'='*30} {ch_name.text} {'='*30}\n"
-                ch_word_count = len(re.findall(RE_CHINESE_CHARS, div_content.text))
-                if ch_word_count < 1024:
-                    content += "(本章可能非內文)\n\n"
-                else:
-                    word_count += ch_word_count
-                    content += "\n"
-                content += div_content.text
+                    content += f"\n\n{'='*30} 第{index}章擷取失敗 {'='*30}\n\n"
 
         state.finished = True
         return content, word_count
@@ -98,7 +99,6 @@ class GetContent:
     @classmethod
     def start(cls: "GetContent", book: "Czbook") -> GetContentState:
         state = GetContentState(None, None, 0, len(book.chapter_list))
-        task = asyncio.create_task(cls.get_content(book.chapter_list, state))
         task = asyncio.create_task(cls.get_content(cls, book.chapter_list, state))
         state.task = task
 
