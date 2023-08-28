@@ -53,13 +53,12 @@ class Bot(discord.Bot):
 
 
 class BaseCog(discord.Cog):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, bot: Bot, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.bot: Bot = bot
 
 
-bot = discord.Bot()
-
+bot = Bot()
 bot.load_extension("cogs", recursive=True)
 
 
@@ -70,3 +69,6 @@ async def on_ready():
 
 if __name__ == "__main__":
     bot.run(os.getenv("TOKEN"))
+
+    bot.save_cache_to_file()
+    print("Bot is offline.")

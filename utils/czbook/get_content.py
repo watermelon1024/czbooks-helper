@@ -28,6 +28,7 @@ class GetContentState:
         self.total = total
         self.percentage: float = 0
         self.eta: float = 0
+        self.finished: bool = False
 
         self._last_update = None
         self._progress_bar_cache = None
@@ -91,12 +92,14 @@ class GetContent:
                     content += "\n"
                 content += div_content.text
 
+        state.finished = True
         return content, word_count
 
     @classmethod
     def start(cls: "GetContent", book: "Czbook") -> GetContentState:
         state = GetContentState(None, None, 0, len(book.chapter_list))
         task = asyncio.create_task(cls.get_content(book.chapter_list, state))
+        task = asyncio.create_task(cls.get_content(cls, book.chapter_list, state))
         state.task = task
 
         return state

@@ -10,6 +10,8 @@ from .timestamp import now_timestamp
 
 if TYPE_CHECKING:
     from .czbook import Czbook
+else:
+    from .czbook import Czbook
 
 
 def get_code(s: str) -> str | None:
