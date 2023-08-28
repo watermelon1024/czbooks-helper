@@ -7,7 +7,7 @@ import aiohttp
 from bs4 import BeautifulSoup
 
 from .const import RE_CHINESE_CHARS
-from .http import HyperLink, fetch_url
+from .http import fetch_url
 from .timestamp import now_timestamp
 
 if TYPE_CHECKING:
@@ -63,7 +63,7 @@ class GetContent:
         pass
 
     async def get_content(
-        self, chapter_list: list[HyperLink], state: GetContentState
+        self, book: "Czbook", state: GetContentState
     ) -> tuple[str, int]:
         """
         Retrun the content and total word count of the book
@@ -72,7 +72,7 @@ class GetContent:
         word_count = 0
         # 逐章爬取內容
         async with aiohttp.ClientSession() as session:
-            for index, ch in enumerate(chapter_list, start=1):
+            for index, ch in enumerate(book.chapter_list, start=1):
                 state.current = index
                 try:
                     soup = BeautifulSoup(
@@ -93,13 +93,23 @@ class GetContent:
                     print(f"Error when getting {ch.url}: {e}")
                     content += f"\n\n{'='*30} 第{index}章擷取失敗 {'='*30}\n\n"
 
+        book.words_count = word_count
+        with open(f"./data/{book.code}.txt", "w", encoding="utf-8") as file:
+            file.write(
+                f"""{book.title}
+連結：https://czbooks.net/n/{book.code}
+作者：{book.author.text}
+總章數：{state.total}
+總字數：{word_count}
+{content}"""
+            )
         state.finished = True
         return content, word_count
 
     @classmethod
     def start(cls: "GetContent", book: "Czbook") -> GetContentState:
         state = GetContentState(None, None, 0, len(book.chapter_list))
-        task = asyncio.create_task(cls.get_content(cls, book.chapter_list, state))
+        task = asyncio.create_task(cls.get_content(cls, book, state))
         state.task = task
 
         return state

@@ -168,10 +168,10 @@ class InfoView(View):
         self.bot.get_content_msg.add(msg.id)
         while True:
             await asyncio.sleep(1)
-            if msg.id not in self.bot.get_content_msg:
-                return
-            elif stats.finished:
+            if stats.finished:
                 break
+            elif msg.id not in self.bot.get_content_msg:
+                return
             await msg.edit(
                 embed=Embed(
                     title="擷取內文中",
@@ -188,6 +188,7 @@ class InfoView(View):
         await msg.edit(
             content=f"- 書名: {book.title}\n- 總字數: `{book.words_count}`字",
             file=discord.File(Path(f"./data/{book.code}.txt")),
+            embed=None,
         )
 
     async def cancel_get_content(self, interaction: Interaction):
