@@ -136,6 +136,26 @@ class Czbook:
         self._get_content_state.task.cancel()
         self._get_content_state = None
 
+    def to_dict(self) -> dict:
+        return {
+            "code": self.code,
+            "title": self.title,
+            "description": self.description,
+            "thumbnail": self.thumbnail,
+            "main_color": self.theme_colors,
+            "author": self.author.to_dict(),
+            "state": self.state,
+            "last_update": self.last_update,
+            "views": self.views,
+            "category": self.category.to_dict(),
+            # "content_cache": self.content_cache,
+            "words_count": self.words_count,
+            "hashtags": [hashtag.to_dict() for hashtag in self.hashtags],
+            "chapter_list": [chapter.to_dict() for chapter in self.chapter_list],
+            # "comments": [comment.to_dict() for comment in self.comments],
+            "last_fetch_time": self.last_fetch_time,
+        }
+
 
 def load_from_json(data: dict) -> Czbook:
     return Czbook(
