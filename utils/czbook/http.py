@@ -33,8 +33,11 @@ async def get_html(url: str) -> BeautifulSoup:
         return BeautifulSoup(await fetch_url(session, url), "html.parser")
 
 
-async def fetch_url(
-    session: aiohttp.ClientSession, url: str, max_retry: int = 3
+async def _fetch_url(
+    session: aiohttp.ClientSession,
+    url: str,
+    max_retry: int,
+    now_retry: int,
 ) -> str:
     try:
         async with session.get(
@@ -48,7 +51,15 @@ async def fetch_url(
     except NotFoundError as e:
         raise e
     except Exception as e:
-        if max_retry > 0:
-            await asyncio.sleep(1)
-            return await fetch_url(session, url, max_retry - 1)
+        if now_retry < max_retry:
+            await asyncio.sleep(now_retry)
+            return await _fetch_url(session, url, max_retry, now_retry + 1)
         raise e
+
+
+async def fetch_url(
+    session: aiohttp.ClientSession,
+    url: str,
+    max_retry: int = 3,
+) -> str:
+    return await _fetch_url(session, url, max_retry, 0)
