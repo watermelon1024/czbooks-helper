@@ -5,7 +5,7 @@ import aiohttp
 from bs4 import BeautifulSoup
 
 from .const import TIMEOUT, CRAWLER_HEADER
-from .error import BookNotFoundError
+from .error import BookNotFoundError, TooManyRequestsError
 
 
 class HyperLink:
@@ -35,9 +35,13 @@ async def get_html(url: str) -> BeautifulSoup:
         return BeautifulSoup(await response.text(), "html.parser")
 
 
-async def fetch_url(session: aiohttp.ClientSession, url: str) -> str:
+async def fetch_url(
+    session: aiohttp.ClientSession, url: str, max_retry: int = 3
+) -> str:
     async with session.get(url, timeout=TIMEOUT, headers=CRAWLER_HEADER) as response:
         if response.status == 429:
+            if max_retry < 1:
+                raise TooManyRequestsError("429 Too many requests")
             await asyncio.sleep(1)
-            return await fetch_url(session, url)
+            return await fetch_url(session, url, max_retry - 1)
         return await response.text()

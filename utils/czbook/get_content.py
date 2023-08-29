@@ -91,7 +91,7 @@ class GetContent:
                     content += div_content.text
                 except Exception as e:
                     print(f"Error when getting {ch.url}: {e}")
-                    content += f"\n\n{'='*30} 第{index}章擷取失敗 {'='*30}\n\n"
+                    content += f"\n\n{'='*30} 第{index}章擷取失敗 {'='*30}\n\n{ch.url}\n"
 
         book.word_count = word_count
         with open(f"./data/{book.code}.txt", "w", encoding="utf-8") as file:
