@@ -11,6 +11,7 @@ DICT_SEARCH_BY = {
     "hashtag": "hashtag",
     "author": "a",
 }
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"  # noqa
+# crawler
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"  # noqa
 CRAWLER_HEADER = {"User-Agent": USER_AGENT}
-TIMEOUT = aiohttp.ClientTimeout(connect=5)
+DEFAULT_TIMEOUT = aiohttp.ClientTimeout(total=10, connect=5)
