@@ -182,7 +182,7 @@ class InfoView(View):
                 ),
                 view=None if stats.eta < 2 else MISSING,
             )
-
+        self.bot.save_cache_to_file()
         await msg.edit(
             content=f"- 書名: {book.title}\n- 總字數: `{book.word_count}`字",
             file=discord.File(Path(f"./data/{book.code}.txt")),
