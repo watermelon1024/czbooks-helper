@@ -43,7 +43,10 @@ class Bot(discord.Bot):
         return self.book_cache.get(code)
 
     async def get_or_fetch_book(self, code: str) -> Czbook:
-        return self.get_cache(code) or await fetch_book(code)
+        if book := self.get_cache(code):
+            return book
+        self.add_cache(book := await fetch_book(code))
+        return book
 
     def save_cache_to_file(self) -> None:
         with open(BOOK_CACHE_FILE, "w", encoding="utf-8") as file:

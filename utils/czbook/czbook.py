@@ -48,7 +48,7 @@ class Czbook:
         self._overview_embed_cache: Embed = None
         self._chapter_embed_cache: Embed = None
         self._comments_embed_cache: Embed = None
-        self._comment_last_update: float = None
+        self._comment_last_update: float = 0
         self._get_content_state: GetContentState = None
 
     def get_theme_color(self) -> Colour:
