@@ -1,6 +1,6 @@
-class BookNotFoundError(Exception):
+class NotFoundError(Exception):
     """
-    Book not found.
+    404 Not found.
     """
 
     def __init__(self, *args: object) -> None:

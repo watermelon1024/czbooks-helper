@@ -36,7 +36,7 @@ class InfoCog(BaseCog):
                 embed=book.overview_embed(),
                 view=InfoView(self.bot),
             )
-        except czbook.BookNotFoundError:
+        except czbook.NotFoundError:
             await ctx.respond(
                 embed=Embed(title="未知的書本", color=discord.Color.red()),
             )

@@ -13,6 +13,6 @@ Made by @watermelon1024
 from .api import fetch_book, get_code, search
 from .comment import Comment
 from .czbook import Czbook, load_from_json
-from .error import BookNotFoundError
+from .error import NotFoundError
 from .get_content import GetContentState
 from .http import HyperLink
