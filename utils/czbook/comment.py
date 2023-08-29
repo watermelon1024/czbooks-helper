@@ -11,11 +11,11 @@ if TYPE_CHECKING:
 class Comment:
     def __init__(
         self,
-        id: int,
+        id: str,
         author: str,
         message: str,
         timestsmp: int,
-        reply_to: int = 0,
+        reply_to: str = None,
     ) -> None:
         self.id = id
         self.author = author
@@ -64,9 +64,11 @@ async def update_comments(code: str) -> list[Comment]:
                 items = data["data"]["items"]
             comments += [
                 Comment(
+                    comment["id"],
                     comment["nickname"],
                     comment["message"],
                     comment["date"],
+                    comment["replyId"] or None,
                 )
                 for comment in items
             ]

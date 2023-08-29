@@ -109,11 +109,10 @@ class InfoView(View):
         self.get_content_button.disabled = (
             interaction.message.components[-1].children[0].disabled
         )
-        code = czbook.get_code(interaction.message.embeds[0].url)
-        await interaction.response.edit_message(
-            embed=(await self.bot.get_or_fetch_book(code)).overview_embed(),
-            view=self,
+        book = await self.bot.get_or_fetch_book(
+            czbook.get_code(interaction.message.embeds[0].url)
         )
+        await interaction.response.edit_message(embed=book.overview_embed(), view=self)
 
     async def chapter_button_callback(self, interaction: Interaction):
         self.overview_button.disabled = False
@@ -122,11 +121,10 @@ class InfoView(View):
         self.get_content_button.disabled = (
             interaction.message.components[-1].children[0].disabled
         )
-        code = czbook.get_code(interaction.message.embeds[0].url)
-        await interaction.response.edit_message(
-            embed=(await self.bot.get_or_fetch_book(code)).chapter_embed(),
-            view=self,
+        book = await self.bot.get_or_fetch_book(
+            czbook.get_code(interaction.message.embeds[0].url)
         )
+        await interaction.response.edit_message(embed=book.chapter_embed(), view=self)
 
     async def comment_button_callback(self, interaction: Interaction):
         self.get_content_button.disabled = (
@@ -137,7 +135,7 @@ class InfoView(View):
         book = await self.bot.get_or_fetch_book(
             czbook.get_code(interaction.message.embeds[0].url)
         )
-        await interaction.response.edit_message(embed=await book.comments_embed())
+        await interaction.message.edit(embed=await book.comments_embed(), view=self)
 
     async def get_content_button_callback(self, interaction: Interaction):
         self.get_content_button.disabled = (
