@@ -36,14 +36,19 @@ async def get_html(url: str) -> BeautifulSoup:
 async def fetch_url(
     session: aiohttp.ClientSession, url: str, max_retry: int = 3
 ) -> str:
-    async with session.get(
-        url, headers=CRAWLER_HEADER, timeout=DEFAULT_TIMEOUT
-    ) as response:
-        if response.status == 404:
-            raise NotFoundError("404 Not found")
-        if response.status == 429:
-            if max_retry < 1:
+    try:
+        async with session.get(
+            url, headers=CRAWLER_HEADER, timeout=DEFAULT_TIMEOUT
+        ) as response:
+            if response.status == 404:
+                raise NotFoundError("404 Not found")
+            if response.status == 429:
                 raise TooManyRequestsError("429 Too many requests")
+            return await response.text()
+    except NotFoundError as e:
+        raise e
+    except Exception as e:
+        if max_retry > 0:
             await asyncio.sleep(1)
             return await fetch_url(session, url, max_retry - 1)
-        return await response.text()
+        raise e
