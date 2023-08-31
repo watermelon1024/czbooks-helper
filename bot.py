@@ -34,16 +34,26 @@ class Bot(discord.Bot):
 
     def add_cache(self, book: Czbook) -> None:
         self.book_cache[book.code] = book
-        now = now_timestamp()
-        if now - self._last_save_cache_time > 300:
+        if (now := now_timestamp()) - self._last_save_cache_time > 300:
             self._last_save_cache_time = now
             self.save_cache_to_file()
 
     def get_cache(self, code: str) -> Czbook | None:
         return self.book_cache.get(code)
 
-    async def get_or_fetch_book(self, code: str) -> Czbook:
+    async def get_or_fetch_book(
+        self, code: str, update_when_out_of_date: bool = True
+    ) -> Czbook:
         if book := self.get_cache(code):
+            if (
+                update_when_out_of_date
+                and (now := now_timestamp()) - book.last_fetch_time > 600
+            ):
+                book.last_fetch_time = now
+                book_updated = await fetch_book(book.code, False)
+                book_updated.thumbnail = book.thumbnail
+                book_updated.theme_colors = book.theme_colors
+                self.add_cache(book_updated)
             return book
         self.add_cache(book := await fetch_book(code))
         return book

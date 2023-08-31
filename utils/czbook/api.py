@@ -10,8 +10,6 @@ from .timestamp import now_timestamp
 
 if TYPE_CHECKING:
     from .czbook import Czbook
-else:
-    from .czbook import Czbook
 
 
 def get_code(s: str) -> str | None:
@@ -20,7 +18,7 @@ def get_code(s: str) -> str | None:
     return None
 
 
-async def fetch_book(code: str) -> "Czbook":
+async def fetch_book(code: str, first: bool = True) -> "Czbook":
     soup = await get_html(f"https://czbooks.net/n/{code}")
     # state
     state_div = soup.find("div", class_="state")
@@ -38,7 +36,7 @@ async def fetch_book(code: str) -> "Czbook":
     title = detail_div.find("span", class_="title").text
     description = detail_div.find("div", class_="description").text
     thumbnail = detail_div.find("img").get("src")
-    if thumbnail.startswith("https://img.czbooks.net"):
+    if first and thumbnail.startswith("https://img.czbooks.net"):
         theme_colors = extract_theme_light_colors_hex(await get_img_from_url(thumbnail))
     else:
         thumbnail = None
@@ -55,6 +53,7 @@ async def fetch_book(code: str) -> "Czbook":
         HyperLink(chapter.text, "https:" + chapter["href"])
         for chapter in soup.find("ul", id="chapter-list").find_all("a")
     ]
+    from .czbook import Czbook
 
     return Czbook(
         code=code,
