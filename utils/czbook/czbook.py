@@ -61,12 +61,14 @@ class Czbook:
 
         embed = Embed(
             title=self.title,
-            description=f"""- 作　者：{self.author}
-- 狀　態：{self.state} ({self.last_update}更新)
-- 總字數：{f'`{self.word_count}`字' if self.word_count else '`請點擊取得內文以取得字數`'}
-- 觀看數：`{self.views}`次
-- 章節數：`{len(self.chapter_list)}`章
-- 分　類：{self.category}""",
+            description=(
+                f"- 作　者：{self.author}\n"
+                f"- 狀　態：{self.state} ({self.last_update}更新)\n"
+                f"- 總字數：{f'`{self.word_count}`字' if self.word_count else '`點擊取得內文以取得字數`'}\n"
+                f"- 觀看數：`{self.views}`次\n"
+                f"- 章節數：`{len(self.chapter_list)}`章\n"
+                f"- 分　類：{self.category}"
+            ),
             url=f"https://czbooks.net/n/{self.code}",
             color=self.get_theme_color(),
         )

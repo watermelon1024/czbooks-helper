@@ -53,7 +53,7 @@ class GetContentState:
 
         self.percentage = progress
         self.eta = eta
-        self._progress_bar_cache = f"第{self.current}/{self.total}章 {progress*100:.1f}%{bar}預計剩餘時間：{eta_display}"  # noqa
+        self._progress_bar_cache = f"第{self.current}/{self.total}章 {progress*100:.1f}%\n{bar}預計剩餘時間：{eta_display}"  # noqa
         self._last_update = self.current
 
         return self._progress_bar_cache
@@ -95,14 +95,15 @@ class GetContent:
                     content += f"\n\n{'='*30} 本章擷取失敗 {'='*30}\n\n請至網站閱讀：{ch.url}"
 
         with open(f"./data/{book.code}.txt", "w", encoding="utf-8") as file:
-            file.write(
-                f"""{book.title}
-連結：https://czbooks.net/n/{book.code}
-作者：{book.author.text}
-總章數：{state.total}
-總字數：{word_count}
-{content}"""
+            _s = (
+                f"{book.title}\n"
+                f"連結：https://czbooks.net/n/{book.code}\n"
+                f"作者：{book.author.text}\n"
+                f"總章數：{state.total}\n"
+                f"總字數：{word_count}\n"
+                f"{content}"
             )
+            file.write(_s)
         book.word_count = word_count
         book.content_cache = True
         state.finished = True
