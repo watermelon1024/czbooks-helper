@@ -1,7 +1,6 @@
 import re
-from typing import TYPE_CHECKING
 
-from typing import Literal
+from typing import Literal, TYPE_CHECKING
 
 from .color import extract_theme_light_colors_hex, get_img_from_url
 from .const import RE_BOOK_CODE, DICT_SEARCH_BY

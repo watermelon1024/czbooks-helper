@@ -2,13 +2,12 @@ import asyncio
 import re
 from typing import TYPE_CHECKING
 
-
 import aiohttp
 from bs4 import BeautifulSoup
 
 from .const import RE_CHINESE_CHARS
 from .http import fetch_url
-from .timestamp import now_timestamp
+from .timestamp import now_timestamp, time_diff
 
 if TYPE_CHECKING:
     from .czbook import Czbook
@@ -34,7 +33,7 @@ class GetContentState:
         self._progress_bar_cache = None
 
     def _progress_bar(
-        self, filled_char: str = "-", bar_length: int = 28
+        self, filled_char: str = "-", bar_length: int = 27
     ) -> tuple[float, str]:
         percentage = self.current / self.total
         filled_length = int(bar_length * percentage)
@@ -47,14 +46,16 @@ class GetContentState:
         if self._last_update == self.current:
             return self._progress_bar_cache
 
-        total_diff = now_timestamp() - self.start_time
+        total_diff = time_diff(self.start_time)
         progress, bar = self._progress_bar()
         eta = total_diff / progress - total_diff
         eta_display = f"`{eta:.1f}`秒" if progress > 0.1 or total_diff > 10 else "計算中..."
-        self._progress_bar_cache = f"第{self.current}/{self.total}章 {progress*100:.1f}%{bar}預計剩餘時間：{eta_display}"  # noqa
+
         self.percentage = progress
         self.eta = eta
+        self._progress_bar_cache = f"第{self.current}/{self.total}章 {progress*100:.1f}%{bar}預計剩餘時間：{eta_display}"  # noqa
         self._last_update = self.current
+
         return self._progress_bar_cache
 
 
