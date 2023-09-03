@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 
 from .const import RE_CHINESE_CHARS
 from .http import fetch_url
-from .timestamp import now_timestamp, time_diff
+from .timestamp import now_timestamp, time_diff, is_out_of_date
 
 if TYPE_CHECKING:
     from .czbook import Czbook
@@ -29,7 +29,7 @@ class GetContentState:
         self.eta: float = 0
         self.finished: bool = False
 
-        self._last_update = None
+        self._last_update = 0
         self._progress_bar_cache = None
 
     def _progress_bar(
@@ -43,10 +43,10 @@ class GetContentState:
         )
 
     def get_progress(self) -> str:
-        if self._last_update == self.current:
+        if not (now := is_out_of_date(self._last_update, 1)):
             return self._progress_bar_cache
 
-        total_diff = time_diff(self.start_time)
+        total_diff = time_diff(self.start_time, now)
         progress, bar = self._progress_bar()
         eta = total_diff / progress - total_diff
         eta_display = f"`{eta:.1f}`秒" if progress > 0.1 or total_diff > 10 else "計算中..."
@@ -54,7 +54,7 @@ class GetContentState:
         self.percentage = progress
         self.eta = eta
         self._progress_bar_cache = f"第{self.current}/{self.total}章 {progress*100:.1f}%\n{bar}預計剩餘時間：{eta_display}"  # noqa
-        self._last_update = self.current
+        self._last_update = now
 
         return self._progress_bar_cache
 

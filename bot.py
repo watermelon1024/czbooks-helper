@@ -7,7 +7,7 @@ import discord
 from dotenv import load_dotenv
 
 from utils.czbook import Czbook, load_from_json, fetch_book
-from utils.timestamp import now_timestamp
+from utils.timestamp import is_out_of_date
 
 load_dotenv()
 
@@ -34,7 +34,7 @@ class Bot(discord.Bot):
 
     def add_cache(self, book: Czbook) -> None:
         self.book_cache[book.code] = book
-        if (now := now_timestamp()) - self._last_save_cache_time > 300:
+        if now := is_out_of_date(self._last_save_cache_time, 60):
             self._last_save_cache_time = now
             self.save_cache_to_file()
 
@@ -45,9 +45,8 @@ class Bot(discord.Bot):
         self, code: str, update_when_out_of_date: bool = True
     ) -> Czbook:
         if book := self.get_cache(code):
-            if (
-                update_when_out_of_date
-                and (now := now_timestamp()) - book.last_fetch_time > 600
+            if update_when_out_of_date and (
+                now := is_out_of_date(book.last_fetch_time, 600)
             ):
                 book.last_fetch_time = now
                 book_updated = await fetch_book(book.code, False)

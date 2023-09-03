@@ -5,7 +5,7 @@ from .comment import Comment, update_comments, comments_embed
 from .color import get_random_theme_color
 from .get_content import GetContent, GetContentState
 from .http import HyperLink
-from .timestamp import now_timestamp
+from .timestamp import is_out_of_date
 
 
 class Czbook:
@@ -114,7 +114,7 @@ class Czbook:
     async def comments_embed(self, update_when_out_of_date: bool = True):
         if (
             update_when_out_of_date
-            and ((now := now_timestamp()) - self._comment_last_update) > 600
+            and (now := is_out_of_date(self._comment_last_update, 600))
         ):
             self._comment_last_update = now
             await self.update_comments()
