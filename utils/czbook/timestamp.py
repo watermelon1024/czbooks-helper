@@ -1,8 +1,8 @@
-from datetime import datetime
+import time
 
 
 def now_timestamp() -> float:
-    return datetime.now().timestamp()
+    return time.time()
 
 
 def time_diff(start_timestamp: float, end_timestamp: float = None) -> float:
