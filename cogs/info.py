@@ -190,6 +190,7 @@ class InfoView(View):
             content=f"- 書名: {book.title}\n- 總字數: `{book.word_count}`字",
             file=discord.File(Path(f"./data/{book.code}.txt")),
             embed=None,
+            view=None,
         )
 
     async def cancel_get_content(self, interaction: Interaction):
