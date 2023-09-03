@@ -127,6 +127,9 @@ class InfoView(View):
         await interaction.response.edit_message(embed=book.chapter_embed(), view=self)
 
     async def comment_button_callback(self, interaction: Interaction):
+        self.overview_button.disabled = False
+        self.chapter_button.disabled = False
+        self.comment_button.disabled = True
         self.get_content_button.disabled = (
             interaction.message.components[-1].children[0].disabled
         )
