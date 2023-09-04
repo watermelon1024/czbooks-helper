@@ -32,6 +32,31 @@ class Bot(discord.Bot):
         self._last_save_cache_time = 0
         self.get_content_msg: set = set()
 
+    # bot event
+    async def on_ready(self) -> None:
+        """
+        The event that is triggered when the bot is ready.
+        """
+        print(f"Login as {self.user} ({self.user.id}).")
+
+    async def close(self) -> None:
+        """
+        Closes the bot.
+        """
+        print("Saving file...")
+        self.save_cache_to_file()
+        print("Closing the bot...")
+        await super().close()
+        print("Bot is offline.")
+
+    def run(self, token: str) -> None:
+        """
+        Starts the bot.
+        """
+        print("Starting the bot...")
+        super().run(token)
+
+    # czbook func
     def add_cache(self, book: Czbook) -> None:
         self.book_cache[book.code] = book
         if now := is_out_of_date(self._last_save_cache_time, 60):
@@ -74,13 +99,5 @@ bot = Bot()
 bot.load_extension("cogs", recursive=True)
 
 
-@bot.event
-async def on_ready():
-    print(f"Login as {bot.user}")
-
-
 if __name__ == "__main__":
     bot.run(os.getenv("TOKEN"))
-
-    bot.save_cache_to_file()
-    print("Bot is offline.")
