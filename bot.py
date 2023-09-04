@@ -14,9 +14,13 @@ load_dotenv()
 BOOK_CACHE_FILE = "./data/books.json"
 book_cache: dict[str, Czbook] = {}
 
-with open(BOOK_CACHE_FILE, "r", encoding="utf-8") as file:
-    data: dict[str, dict] = json.load(file)
-    book_cache = {code: load_from_json(detail) for code, detail in data.items()}
+try:
+    with open(BOOK_CACHE_FILE, "r", encoding="utf-8") as file:
+        data: dict[str, dict] = json.load(file)
+        book_cache = {code: load_from_json(detail) for code, detail in data.items()}
+except Exception as e:
+    print(f"error load db file, using empty cache.\n{e}")
+    book_cache = {}
 
 
 def czbook_serializer(obj):
@@ -28,7 +32,7 @@ def czbook_serializer(obj):
 class Bot(discord.Bot):
     def __init__(self, description=None, *args, **options):
         super().__init__(description, *args, **options)
-        self.book_cache = book_cache
+        self.book_cache: dict[str, Czbook] = book_cache
         self._last_save_cache_time = 0
         self.get_content_msg: set = set()
 
