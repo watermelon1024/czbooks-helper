@@ -1,9 +1,9 @@
 import re
 
-from typing import Literal, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from .color import extract_theme_light_colors_hex, get_img_from_url
-from .const import RE_BOOK_CODE, DICT_SEARCH_BY
+from .const import RE_BOOK_CODE
 from .http import HyperLink, get_html
 from .timestamp import now_timestamp
 
@@ -72,27 +72,3 @@ async def fetch_book(code: str, first: bool = True) -> "Czbook":
         comments=[],
         last_fetch_time=now_timestamp(),
     )
-
-
-async def search(
-    keyword: str,
-    by: Literal["name", "hashtag", "author"],
-    page: int = 0,
-) -> list[HyperLink]:
-    if not (_by := DICT_SEARCH_BY.get(by)):
-        raise ValueError(f'Unknown value "{by}" of by')
-    soup = await get_html(f"https://czbooks.net/{_by}/{keyword}")
-    novel_list_ul = soup.find("ul", class_="nav novel-list style-default").find_all(
-        "li", class_="novel-item-wrapper"
-    )
-
-    if not novel_list_ul:
-        return None
-
-    return [
-        HyperLink(
-            novel.find("div", class_="novel-item-title").text.strip(),
-            get_code(novel.find("a").get("href")),
-        )
-        for novel in novel_list_ul
-    ]

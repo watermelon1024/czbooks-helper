@@ -45,17 +45,17 @@ class SearchCog(BaseCog):
     ):
         print(f"{ctx.author} used /search keyword: {keyword} by: {by}")
         await ctx.defer()
-        if result := await czbook.search(keyword, by):
+        if results := await czbook.search(keyword, by):
             return await ctx.respond(
                 embed=Embed(
                     title="搜尋結果",
                     description="\n".join(
-                        f"{index}. [{novel.text}](https://czbooks.net/n/{novel.url})"  # noqa
-                        for index, novel in enumerate(result[:20], start=1)
+                        f"{index}. [{novel.book_title}](https://czbooks.net/n/{novel.code})"  # noqa
+                        for index, novel in enumerate(results[:20], start=1)
                     ),
                     color=discord.Color.green(),
                 ),
-                view=SearchView(self.bot, result[:20]),
+                view=SearchView(self.bot, results[:20]),
             )
 
         return await ctx.respond(embed=Embed(title="無搜尋結果", color=discord.Color.red()))
@@ -163,7 +163,7 @@ class SearchCog(BaseCog):
 
 
 class SearchView(View):
-    def __init__(self, bot: Bot, options: list[czbook.HyperLink] = []):
+    def __init__(self, bot: Bot, options: list[czbook.SearchResult] = []):
         super().__init__(timeout=None)
         self.bot = bot
 
@@ -172,8 +172,8 @@ class SearchView(View):
             placeholder="請選擇",
             options=[
                 discord.SelectOption(
-                    label=f"{index}. {novel.text}",
-                    value=novel.url,
+                    label=f"{index}. {novel.book_title}",
+                    value=novel.code,
                 )
                 for index, novel in enumerate(options, start=1)
             ],
