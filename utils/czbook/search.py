@@ -1,7 +1,7 @@
 from typing import Literal
 
-from .api import get_code
 from .const import DICT_SEARCH_BY
+from .czbook import get_code
 from .http import get_html
 
 

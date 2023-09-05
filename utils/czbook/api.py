@@ -1,20 +1,11 @@
-import re
-
 from typing import TYPE_CHECKING
 
 from .color import extract_theme_light_colors_hex, get_img_from_url
-from .const import RE_BOOK_CODE
 from .http import HyperLink, get_html
 from .timestamp import now_timestamp
 
 if TYPE_CHECKING:
     from .czbook import Czbook
-
-
-def get_code(s: str) -> str | None:
-    if match := re.search(RE_BOOK_CODE, s):
-        return match.group(2)
-    return None
 
 
 async def fetch_book(code: str, first: bool = True) -> "Czbook":

@@ -1,11 +1,20 @@
+import re
+
 from discord import Embed, Colour
 
 from . import utils
-from .comment import Comment, update_comments, comments_embed
 from .color import get_random_theme_color
+from .comment import Comment, update_comments, comments_embed
+from .const import RE_BOOK_CODE
 from .get_content import GetContent, GetContentState
 from .http import HyperLink
 from .timestamp import is_out_of_date
+
+
+def get_code(s: str) -> str | None:
+    if match := re.search(RE_BOOK_CODE, s):
+        return match.group(2)
+    return None
 
 
 class Czbook:
@@ -112,9 +121,8 @@ class Czbook:
         return self._chapter_embed_cache
 
     async def comments_embed(self, update_when_out_of_date: bool = True):
-        if (
-            update_when_out_of_date
-            and (now := is_out_of_date(self._comment_last_update, 600))
+        if update_when_out_of_date and (
+            now := is_out_of_date(self._comment_last_update, 600)
         ):
             self._comment_last_update = now
             await self.update_comments()
