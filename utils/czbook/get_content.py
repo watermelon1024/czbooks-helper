@@ -106,6 +106,7 @@ class GetContent:
             file.write(_s)
         book.word_count = word_count
         book.content_cache = True
+        book._overview_embed_cache = None
         state.finished = True
         return content, word_count
 
