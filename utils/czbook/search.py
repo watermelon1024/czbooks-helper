@@ -13,7 +13,7 @@ class SearchResult:
 
 async def search(
     keyword: str,
-    by: Literal["name", "hashtag", "author"],
+    by: Literal["name", "hashtag", "author"] = "name",
     page: int = 0,
 ) -> list[SearchResult] | None:
     if not (_by := DICT_SEARCH_BY.get(by)):
