@@ -26,8 +26,12 @@ async def fetch_book(code: str, first: bool = True) -> "Czbook":
     title = detail_div.find("span", class_="title").text
     description = detail_div.find("div", class_="description").text
     thumbnail = detail_div.find("img").get("src")
-    if first and thumbnail.startswith("https://img.czbooks.net"):
-        theme_colors = extract_theme_light_colors_hex(await get_img_from_url(thumbnail))
+    if thumbnail.startswith("https://img.czbooks.net"):
+        theme_colors = (
+            extract_theme_light_colors_hex(await get_img_from_url(thumbnail))
+            if first
+            else None
+        )
     else:
         thumbnail = None
         theme_colors = None
