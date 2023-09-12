@@ -151,7 +151,6 @@ class SearchCog(BaseCog):
 
     @advanced_search.error
     async def on_advanced_search_error(self, ctx: ApplicationContext, error):
-        print(error)
         await ctx.respond(
             embed=Embed(title="發生未知的錯誤", color=discord.Color.red()),
             ephemeral=True,
