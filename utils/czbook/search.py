@@ -14,11 +14,11 @@ class SearchResult:
 async def search(
     keyword: str,
     by: Literal["name", "hashtag", "author"] = "name",
-    page: int = 0,
+    page: int = 1,
 ) -> list[SearchResult] | None:
     if not (_by := DICT_SEARCH_BY.get(by)):
         raise ValueError(f'Unknown value "{by}" of by')
-    soup = await get_html(f"https://czbooks.net/{_by}/{keyword}")
+    soup = await get_html(f"https://czbooks.net/{_by}/{keyword}/{page}")
 
     if not (
         novel_list_ul := soup.find(
