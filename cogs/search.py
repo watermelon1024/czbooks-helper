@@ -101,53 +101,6 @@ class SearchCog(BaseCog):
             embed=Embed(title="暫不開放", color=discord.Color.red()),
             ephemeral=True,
         )
-        print(
-            f"{ctx.author} used /search name: {name} hashtag: {hashtag} author: {author}"
-        )  # noqa
-        msg = await ctx.respond(embed=Embed(title="搜尋中，請稍後..."))
-        # search by name: s, hashtag: hashtag, author: a
-        novel_list: list[list[czbook.HyperLink]] = []
-        page = 0
-        while True:
-            if name:
-                if name_list := await czbook.search(name, "s", page):
-                    novel_list.append(name_list)
-            if hashtag:
-                if hashtag_list := await czbook.search(hashtag, "hashtag", page):
-                    novel_list.append(hashtag_list)
-            if author:
-                if author_list := await czbook.search(author, "a", page):
-                    novel_list.append(author_list)
-
-            if not novel_list:
-                page += 1
-            else:
-                break
-        if not novel_list:
-            return await msg.edit_original_response(
-                embed=Embed(title="無搜尋結果", color=discord.Color.red())
-            )
-
-        novel_codes = set(novel.link for novel in novel_list[0])
-        for sub_novel_list in novel_list:
-            codes = {item.link for item in sub_novel_list}
-            novel_codes.intersection_update(codes)
-        novel_list_ = [item for item in novel_list[0] if item.link in novel_codes]
-
-        if novel_list_:
-            return await msg.edit_original_response(
-                embed=Embed(
-                    title="搜尋結果",
-                    description="\n".join(
-                        f"{index}. [{novel.text}](https://czbooks.net/n/{novel.link})"  # noqa
-                        for index, novel in enumerate(novel_list_, start=1)
-                    ),
-                )
-            )
-
-        return await msg.edit_original_response(
-            embed=Embed(title="無搜尋結果", color=discord.Color.red())
-        )
 
     @advanced_search.error
     async def on_advanced_search_error(self, ctx: ApplicationContext, error):
