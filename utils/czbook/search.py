@@ -29,8 +29,8 @@ async def search(
 
     return [
         SearchResult(
-            novel.find("div", class_="novel-item-title").text.strip(),
-            get_code(novel.find("a").get("href")),
+            book_title=novel.find("div", class_="novel-item-title").text.strip(),
+            code=get_code(novel.find("a").get("href")),
         )
         for novel in novel_list_ul
     ]
