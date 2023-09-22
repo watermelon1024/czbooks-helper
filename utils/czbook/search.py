@@ -34,3 +34,31 @@ async def search(
         )
         for novel in novel_list_ul
     ]
+
+
+async def search_advance(
+    name: str = None, hashtag: str = None, author: str = None
+) -> set[SearchResult]:
+    name_set: set[SearchResult] = set() if name else None
+    hashtag_set: set[SearchResult] = set() if hashtag else None
+    author_set: set[SearchResult] = set() if author else None
+    page = 1
+    while True:
+        if name:
+            if novel := await search(name, "s", page):
+                name_set.update(novel)
+        if hashtag:
+            if novel := await search(hashtag, "hashtag", page):
+                hashtag_set.update(novel)
+        if author:
+            if novel := await search(author, "a", page):
+                author_set.update(novel)
+
+        sets = [set_ for set_ in [name_set, hashtag_set, author_set] is not None]
+        result: set[SearchResult] = sets[0].intersection(*sets[1:])
+        if len(result) < 20:
+            page += 1
+        else:
+            break
+
+    return result
