@@ -16,4 +16,4 @@ from .czbook import Czbook, load_from_json, get_code
 from .error import NotFoundError
 from .get_content import GetContentState
 from .http import HyperLink
-from .search import SearchResult, search
+from .search import SearchResult, search, search_advance
