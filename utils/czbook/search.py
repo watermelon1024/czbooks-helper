@@ -45,13 +45,13 @@ async def search_advance(
     page = 1
     while True:
         if name:
-            if novel := await search(name, "s", page):
+            if novel := await search(name, "name", page):
                 name_set.update(novel)
         if hashtag:
             if novel := await search(hashtag, "hashtag", page):
                 hashtag_set.update(novel)
         if author:
-            if novel := await search(author, "a", page):
+            if novel := await search(author, "author", page):
                 author_set.update(novel)
 
         sets = [set_ for set_ in [name_set, hashtag_set, author_set] is not None]
