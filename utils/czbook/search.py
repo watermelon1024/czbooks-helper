@@ -68,10 +68,10 @@ async def search_advance(
         sets = [
             set_ for set_ in [name_set, *hashtag_set, author_set] if set_ is not None
         ]
-        result: set[SearchResult] = sets[0].intersection(*sets[1:])
-        if len(result) < 20:
-            page += 1
-        else:
+        result = sets[0].intersection(*sets[1:])
+        if len(result) >= 20 or page >= 10:
             break
+        else:
+            page += 1
 
     return result
