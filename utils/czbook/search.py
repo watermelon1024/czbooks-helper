@@ -10,6 +10,14 @@ class SearchResult:
         self.book_title = book_title
         self.code = code
 
+    def __eq__(self, __value: object) -> bool:
+        if isinstance(__value, SearchResult):
+            return self.code == __value.code
+        return False
+
+    def __hash__(self) -> int:
+        return hash(self.code)
+
 
 async def search(
     keyword: str,
