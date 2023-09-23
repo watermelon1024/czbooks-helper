@@ -47,7 +47,7 @@ async def search(
 async def search_advance(
     name: str = None, hashtag: str | list[str] = None, author: str = None
 ) -> set[SearchResult]:
-    if isinstance(hashtag, list):
+    if not isinstance(hashtag, list):
         hashtags = [hashtag]
     name_set: set[SearchResult] = set() if name else None
     hashtag_set: list[set[SearchResult]] = [set()] * len(hashtags) if hashtags else None
