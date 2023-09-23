@@ -50,7 +50,9 @@ async def search_advance(
     if not isinstance(hashtag, list):
         hashtag = [hashtag]
     name_set: set[SearchResult] = set() if name else None
-    hashtag_set: list[set[SearchResult]] = [set()] * len(hashtag) if hashtag else None
+    hashtag_set: list[set[SearchResult]] = (
+        [set() for _ in range(len(hashtag))] if hashtag else None
+    )
     author_set: set[SearchResult] = set() if author else None
     page = 1
     while True:
