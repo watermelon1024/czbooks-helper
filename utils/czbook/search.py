@@ -45,25 +45,28 @@ async def search(
 
 
 async def search_advance(
-    name: str = None, hashtag: str = None, author: str = None
+    name: str = None, hashtag: str | list[str] = None, author: str = None
 ) -> set[SearchResult]:
+    if isinstance(hashtag, list):
+        hashtags = [hashtag]
     name_set: set[SearchResult] = set() if name else None
-    hashtag_set: set[SearchResult] = set() if hashtag else None
+    hashtag_set: list[set[SearchResult]] = [set()] * len(hashtags) if hashtags else None
     author_set: set[SearchResult] = set() if author else None
     page = 1
     while True:
         if name:
             if novel := await search(name, "name", page):
                 name_set.update(novel)
-        if hashtag:
-            if novel := await search(hashtag, "hashtag", page):
-                hashtag_set.update(novel)
+        if hashtags:
+            for index, hashtag_ in enumerate(hashtags):
+                if novel := await search(hashtag_, "hashtag", page):
+                    hashtag_set[index].update(novel)
         if author:
             if novel := await search(author, "author", page):
                 author_set.update(novel)
 
         sets = [
-            set_ for set_ in [name_set, hashtag_set, author_set] if set_ is not None
+            set_ for set_ in [name_set, *hashtag_set, author_set] if set_ is not None
         ]
         result: set[SearchResult] = sets[0].intersection(*sets[1:])
         if len(result) < 20:
