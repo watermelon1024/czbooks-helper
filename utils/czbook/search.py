@@ -3,6 +3,7 @@ from typing import Literal
 from .const import DICT_SEARCH_BY
 from .czbook import get_code
 from .http import get_html
+from .timestamp import now_timestamp, is_out_of_date
 
 
 class SearchResult:
@@ -45,8 +46,12 @@ async def search(
 
 
 async def search_advance(
-    name: str = None, hashtag: str | list[str] = None, author: str = None
+    name: str = None,
+    hashtag: str | list[str] = None,
+    author: str = None,
+    timeout: float = 30,
 ) -> set[SearchResult]:
+    start = now_timestamp()
     if not isinstance(hashtag, list):
         hashtag = [hashtag]
     name_set: set[SearchResult] = set() if name else None
@@ -71,7 +76,7 @@ async def search_advance(
             set_ for set_ in [name_set, *hashtag_set, author_set] if set_ is not None
         ]
         result = sets[0].intersection(*sets[1:])
-        if len(result) >= 20 or page >= 10:
+        if len(result) >= 20 or page >= 20 or is_out_of_date(start, timeout):
             break
         else:
             page += 1
