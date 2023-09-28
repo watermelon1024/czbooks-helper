@@ -6,8 +6,8 @@ import discord
 from discord import Embed, ApplicationContext, Interaction, Colour, MISSING
 from discord.ui import View, Button
 
+import czbook
 from bot import BaseCog, Bot
-from utils import czbook
 from utils.discord import get_or_fetch_message_from_reference
 
 
