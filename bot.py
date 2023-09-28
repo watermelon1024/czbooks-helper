@@ -18,7 +18,9 @@ book_cache: dict[str, Book] = {}
 try:
     with open(BOOK_CACHE_FILE, "r", encoding="utf-8") as file:
         data: dict[str, dict] = json.load(file)
-        book_cache = {code: load_from_json(detail) for code, detail in data.items()}
+        book_cache = {
+            code: Book(*load_from_json(detail).__dict__.values()) for code, detail in data.items()
+        }
 except Exception as e:
     print(f"error load db file, using empty cache.\n{e}")
     book_cache = {}
@@ -61,7 +63,7 @@ class Bot(discord.Bot):
         print("Starting the bot...")
         super().run(token)
 
-    # czbook func
+    # czbook func #
     def add_cache(self, book: Book) -> None:
         self.book_cache[book.code] = book
         if now := is_out_of_date(self._last_save_cache_time, 60):
@@ -71,6 +73,9 @@ class Bot(discord.Bot):
     def get_cache(self, code: str) -> Book | None:
         return self.book_cache.get(code)
 
+    async def fetch_book(self, code: str, first: bool = True) -> Book:
+        return Book(*(await fetch_book(code, first)).__dict__.values())
+
     async def get_or_fetch_book(
         self, code: str, update_when_out_of_date: bool = True
     ) -> Book:
@@ -79,12 +84,12 @@ class Bot(discord.Bot):
                 now := is_out_of_date(book.last_fetch_time, 600)
             ):
                 book.last_fetch_time = now
-                book_updated = await fetch_book(book.code, False)
+                book_updated = await self.fetch_book(book.code, False)
                 book_updated.thumbnail = book.thumbnail
                 book_updated.theme_colors = book.theme_colors
+                print(book_updated.__dict__)
                 self.add_cache(book_updated)
-            return book_updated
-        self.add_cache(book := await fetch_book(code))
+        self.add_cache(book := await self.fetch_book(code))
         return book
 
     def save_cache_to_file(self) -> None:

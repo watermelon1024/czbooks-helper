@@ -26,6 +26,8 @@ class Book(czbook.Book):
         chapter_list: list[HyperLink],
         comments: list[Comment],
         last_fetch_time: float = 0,
+        *args,
+        **kwargs,
     ) -> None:
         super().__init__(
             code,
