@@ -1,11 +1,4 @@
-from typing import TYPE_CHECKING
-
 import aiohttp
-
-from discord import Embed
-
-if TYPE_CHECKING:
-    from .czbook import Czbook
 
 
 class Comment:
@@ -31,25 +24,6 @@ class Comment:
             "reply_to": self.reply_to,
             "date": self.timestamp,
         }
-
-
-def comments_embed(book: "Czbook") -> Embed:
-    embed = Embed(
-        title=f"{book.title}評論列表",
-        url=f"https://czbooks.net/n/{book.code}",
-        color=book.get_theme_color(),
-    )
-    for comment in book.comments:
-        embed.add_field(
-            name=comment.author,
-            value=f"```{comment.message}```",
-            inline=False,
-        )
-        if len(embed) > 6000:
-            embed.remove_field(-1)
-            break
-
-    return embed
 
 
 async def update_comments(code: str) -> list[Comment]:

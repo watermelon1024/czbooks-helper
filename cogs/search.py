@@ -5,8 +5,8 @@ import discord
 from discord import Embed, ApplicationContext, Interaction, OptionChoice
 from discord.ui import View, Select
 
+import czbook
 from bot import BaseCog, Bot
-from utils import czbook
 from cogs.info import InfoView
 
 

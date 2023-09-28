@@ -1,1 +1,1 @@
-from utils.czbook.timestamp import *  # noqa
+from czbook.timestamp import *  # noqa
