@@ -50,7 +50,7 @@ async def search_advance(
     hashtag: str | list[str] = None,
     author: str = None,
     timeout: float = 30,
-) -> set[SearchResult]:
+) -> list[SearchResult]:
     start = now_timestamp()
     if not isinstance(hashtag, list):
         hashtag = [hashtag]
@@ -81,4 +81,4 @@ async def search_advance(
         else:
             page += 1
 
-    return result
+    return list(result)
