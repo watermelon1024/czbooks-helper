@@ -1,14 +1,9 @@
 import re
 
-from discord import Embed, Colour
-
-from . import utils
-from .color import get_random_theme_color
-from .comment import Comment, update_comments, comments_embed
+from .comment import Comment, update_comments
 from .const import RE_BOOK_CODE
 from .get_content import GetContent, GetContentState
 from .http import HyperLink
-from .timestamp import is_out_of_date
 
 
 def get_code(s: str) -> str | None:
@@ -54,83 +49,8 @@ class Book:
         self.comments = comments
         self.last_fetch_time = last_fetch_time
 
-        self._overview_embed_cache: Embed = None
-        self._chapter_embed_cache: Embed = None
-        self._comments_embed_cache: Embed = None
         self._comment_last_update: float = 0
         self._get_content_state: GetContentState = None
-
-    def get_theme_color(self) -> Colour:
-        return get_random_theme_color(self.theme_colors)
-
-    def overview_embed(self, from_cache: bool = True) -> Embed:
-        if self._overview_embed_cache and from_cache:
-            self._overview_embed_cache.color = self.get_theme_color()
-            return self._overview_embed_cache
-
-        embed = Embed(
-            title=self.title,
-            description=(
-                f"- 作　者：{self.author}\n"
-                f"- 狀　態：{self.state} ({self.last_update}更新)\n"
-                f"- 總字數：{f'`{self.word_count}`字' if self.word_count else '`點擊取得內文以取得字數`'}\n"
-                f"- 觀看數：`{self.views}`次\n"
-                f"- 章節數：`{len(self.chapter_list)}`章\n"
-                f"- 分　類：{self.category}"
-            ),
-            url=f"https://czbooks.net/n/{self.code}",
-            color=self.get_theme_color(),
-        )
-        embed.add_field(
-            name="書本簡述",
-            value=(
-                self.description
-                if len(self.description) < 1024
-                else self.description[:1021] + "⋯⋯"
-            ),
-            inline=False,
-        )
-        embed.add_field(
-            name="標籤",
-            value=(
-                utils.hyper_link_list_to_str(self.hashtags, 1024, "、", "⋯⋯")
-                if self.hashtags
-                else "尚無標籤"
-            ),
-            inline=False,
-        )
-        if self.thumbnail:
-            embed.set_thumbnail(url=self.thumbnail)
-
-        self._overview_embed_cache = embed
-        return self._overview_embed_cache
-
-    def chapter_embed(self, from_cache: bool = True) -> Embed:
-        if self._chapter_embed_cache and from_cache:
-            self._chapter_embed_cache.color = self.get_theme_color()
-            return self._chapter_embed_cache
-
-        self._chapter_embed_cache = Embed(
-            title=f"{self.title}章節列表",
-            description=utils.hyper_link_list_to_str(
-                self.chapter_list, 4096, "、", "⋯⋯"
-            ),
-            url=f"https://czbooks.net/n/{self.code}",
-            color=self.get_theme_color(),
-        )
-        return self._chapter_embed_cache
-
-    async def comments_embed(self, update_when_out_of_date: bool = True):
-        if update_when_out_of_date and (
-            now := is_out_of_date(self._comment_last_update, 600)
-        ):
-            self._comment_last_update = now
-            await self.update_comments()
-            self._comments_embed_cache = comments_embed(self)
-        elif not self._comments_embed_cache:
-            self._comments_embed_cache = comments_embed(self)
-
-        return self._comments_embed_cache
 
     async def update_comments(self):
         self.comments = await update_comments(self.code)

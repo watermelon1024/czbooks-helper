@@ -1,10 +1,8 @@
-import random
 import io
 
 import aiohttp
 import numpy as np
 
-from discord import Colour
 from PIL import Image
 from sklearn.cluster import KMeans
 
@@ -58,7 +56,3 @@ async def get_img_from_url(url: str) -> Image.Image:
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resopnse:
             return Image.open(io.BytesIO(await resopnse.read()))
-
-
-def get_random_theme_color(theme_colors: list[int]) -> Colour:
-    return Colour(random.choice(theme_colors)) if theme_colors else Colour.random()
