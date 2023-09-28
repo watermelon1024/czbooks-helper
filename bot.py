@@ -6,13 +6,14 @@ import discord
 
 from dotenv import load_dotenv
 
-from utils.czbook import Czbook, load_from_json, fetch_book
+from czbook import load_from_json, fetch_book
+from utils.czbook import Book
 from utils.timestamp import is_out_of_date
 
 load_dotenv()
 
 BOOK_CACHE_FILE = "./data/books.json"
-book_cache: dict[str, Czbook] = {}
+book_cache: dict[str, Book] = {}
 
 try:
     with open(BOOK_CACHE_FILE, "r", encoding="utf-8") as file:
@@ -24,7 +25,7 @@ except Exception as e:
 
 
 def czbook_serializer(obj):
-    if isinstance(obj, Czbook):
+    if isinstance(obj, Book):
         return obj.to_dict()
     raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
@@ -32,7 +33,7 @@ def czbook_serializer(obj):
 class Bot(discord.Bot):
     def __init__(self, description=None, *args, **options):
         super().__init__(description, *args, **options)
-        self.book_cache: dict[str, Czbook] = book_cache
+        self.book_cache: dict[str, Book] = book_cache
         self._last_save_cache_time = 0
         self.get_content_msg: set = set()
 
@@ -61,18 +62,18 @@ class Bot(discord.Bot):
         super().run(token)
 
     # czbook func
-    def add_cache(self, book: Czbook) -> None:
+    def add_cache(self, book: Book) -> None:
         self.book_cache[book.code] = book
         if now := is_out_of_date(self._last_save_cache_time, 60):
             self._last_save_cache_time = now
             self.save_cache_to_file()
 
-    def get_cache(self, code: str) -> Czbook | None:
+    def get_cache(self, code: str) -> Book | None:
         return self.book_cache.get(code)
 
     async def get_or_fetch_book(
         self, code: str, update_when_out_of_date: bool = True
-    ) -> Czbook:
+    ) -> Book:
         if book := self.get_cache(code):
             if update_when_out_of_date and (
                 now := is_out_of_date(book.last_fetch_time, 600)
