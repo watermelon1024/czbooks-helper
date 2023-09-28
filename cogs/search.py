@@ -97,10 +97,26 @@ class SearchCog(BaseCog):
         hashtag: str,
         author: str,
     ):
-        return await ctx.respond(
-            embed=Embed(title="暫不開放", color=discord.Color.red()),
-            ephemeral=True,
+        print(
+            f"{ctx.author} used /search advanced name: {name} hashtag: {hashtag} author: {author}"
         )
+        await ctx.defer()
+        if results := await czbook.search_advance(
+            name=name or None, hashtag=hashtag or None, author=author or None
+        ):
+            return await ctx.respond(
+                embed=Embed(
+                    title="搜尋結果",
+                    description="\n".join(
+                        f"{index}. [{novel.book_title}](https://czbooks.net/n/{novel.code})"  # noqa
+                        for index, novel in enumerate(results[:20], start=1)
+                    ),
+                    color=discord.Color.green(),
+                ),
+                view=SearchView(self.bot, results[:20]),
+            )
+
+        return await ctx.respond(embed=Embed(title="無搜尋結果", color=discord.Color.red()))
 
     @advanced_search.error
     async def on_advanced_search_error(self, ctx: ApplicationContext, error):
