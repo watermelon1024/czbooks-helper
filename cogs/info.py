@@ -178,8 +178,8 @@ class InfoView(View):
                     title="擷取內文中",
                     description=stats.get_progress(),
                     color=Colour.from_rgb(
-                        min(int(510 * stats.percentage), 255),
                         min(int(510 * (1 - stats.percentage)), 255),
+                        min(int(510 * stats.percentage), 255),
                         0,
                     ),
                 ),
