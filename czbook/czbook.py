@@ -17,7 +17,7 @@ def get_code(s: str) -> str | None:
     return None
 
 
-class Czbook:
+class Book:
     def __init__(
         self,
         code: str,
@@ -167,8 +167,8 @@ class Czbook:
         }
 
 
-def load_from_json(data: dict) -> Czbook:
-    return Czbook(
+def load_from_json(data: dict) -> Book:
+    return Book(
         code=data.get("code"),
         title=data.get("title"),
         description=data.get("description"),
