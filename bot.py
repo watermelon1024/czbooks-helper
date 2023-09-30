@@ -87,7 +87,6 @@ class Bot(discord.Bot):
                 book_updated = await self.fetch_book(book.code, False)
                 book_updated.thumbnail = book.thumbnail
                 book_updated.theme_colors = book.theme_colors
-                print(book_updated.__dict__)
                 self.add_cache(book_updated)
         self.add_cache(book := await self.fetch_book(code))
         return book
