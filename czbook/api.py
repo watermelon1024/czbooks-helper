@@ -5,10 +5,10 @@ from .http import HyperLink, get_html
 from .timestamp import now_timestamp
 
 if TYPE_CHECKING:
-    from .czbook import Book
+    from .czbook import Novel
 
 
-async def fetch_book(code: str, first: bool = True) -> "Book":
+async def fetch_book(code: str, first: bool = True) -> "Novel":
     soup = await get_html(f"https://czbooks.net/n/{code}")
     # state
     state_div = soup.find("div", class_="state")
@@ -47,9 +47,9 @@ async def fetch_book(code: str, first: bool = True) -> "Book":
         HyperLink(chapter.text, "https:" + chapter["href"])
         for chapter in soup.find("ul", id="chapter-list").find_all("a")
     ]
-    from .czbook import Book
+    from .czbook import Novel
 
-    return Book(
+    return Novel(
         code=code,
         title=title,
         description=description,

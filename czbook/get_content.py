@@ -10,7 +10,7 @@ from .http import fetch_url
 from .timestamp import now_timestamp, time_diff, is_out_of_date
 
 if TYPE_CHECKING:
-    from .czbook import Book
+    from .czbook import Novel
 
 
 class GetContentState:
@@ -64,7 +64,7 @@ class GetContent:
         pass
 
     async def get_content(
-        self, book: "Book", state: GetContentState
+        self, book: "Novel", state: GetContentState
     ) -> tuple[str, int]:
         """
         Retrun the content and total word count of the book
@@ -111,7 +111,7 @@ class GetContent:
         return content, word_count
 
     @classmethod
-    def start(cls: "GetContent", book: "Book") -> GetContentState:
+    def start(cls: "GetContent", book: "Novel") -> GetContentState:
         state = GetContentState(None, None, 0, len(book.chapter_list))
         task = asyncio.create_task(cls.get_content(cls, book, state))
         state.task = task

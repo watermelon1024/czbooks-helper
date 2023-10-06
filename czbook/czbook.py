@@ -12,7 +12,7 @@ def get_code(s: str) -> str | None:
     return None
 
 
-class Book:
+class Novel:
     def __init__(
         self,
         code: str,
@@ -87,8 +87,8 @@ class Book:
         }
 
 
-def load_from_json(data: dict) -> Book:
-    return Book(
+def load_from_json(data: dict) -> Novel:
+    return Novel(
         code=data.get("code"),
         title=data.get("title"),
         description=data.get("description"),

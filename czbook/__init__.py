@@ -13,7 +13,7 @@ Made by @watermelon1024
 from . import utils
 from .api import fetch_book
 from .comment import Comment
-from .czbook import Book, load_from_json, get_code
+from .czbook import Novel, load_from_json, get_code
 from .error import NotFoundError
 from .get_content import GetContentState
 from .http import HyperLink
