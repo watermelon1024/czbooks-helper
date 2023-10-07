@@ -1,6 +1,6 @@
 import asyncio
 
-import aiohttp
+from aiohttp import ClientSession
 
 from bs4 import BeautifulSoup
 
@@ -24,17 +24,17 @@ class HyperLink:
 
 
 async def get(url: str) -> str:
-    async with aiohttp.ClientSession() as session:
+    async with ClientSession() as session:
         return await fetch_url(session, url)
 
 
 async def get_html(url: str) -> BeautifulSoup:
-    async with aiohttp.ClientSession() as session:
+    async with ClientSession() as session:
         return BeautifulSoup(await fetch_url(session, url), "html.parser")
 
 
 async def _fetch_url(
-    session: aiohttp.ClientSession,
+    session: ClientSession,
     url: str,
     max_retry: int,
     now_retry: int,
@@ -58,7 +58,7 @@ async def _fetch_url(
 
 
 async def fetch_url(
-    session: aiohttp.ClientSession,
+    session: ClientSession,
     url: str,
     max_retry: int = 3,
 ) -> str:
