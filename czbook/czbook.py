@@ -1,6 +1,6 @@
 import re
 
-from .comment import Comment, update_comments
+from .comment import Comment, CommentField
 from .const import RE_BOOK_CODE
 from .get_content import GetContent, GetContentState
 from .http import HyperLink
@@ -29,7 +29,7 @@ class Novel:
         word_count: int,
         hashtags: list[HyperLink],
         chapter_list: list[HyperLink],
-        comments: list[Comment],
+        comment: Comment,
         last_fetch_time: float = 0,
     ) -> None:
         self.code = code
@@ -46,14 +46,14 @@ class Novel:
         self.word_count = word_count
         self.hashtags = hashtags
         self.chapter_list = chapter_list
-        self.comments = comments
+        self.comment = comment
         self.last_fetch_time = last_fetch_time
 
         self._comment_last_update: float = 0
         self._get_content_state: GetContentState = None
 
-    async def update_comments(self):
-        self.comments = await update_comments(self.code)
+    async def update_comments(self)->None:
+        await self.comment.update()
 
     def get_content(self) -> GetContentState:
         if not self._get_content_state:
@@ -105,6 +105,6 @@ def load_from_json(data: dict) -> Novel:
         chapter_list=[
             HyperLink(*chapter.values()) for chapter in data.get("chapter_list")
         ],
-        comments=[],
+        comment=[],
         last_fetch_time=data.get("last_fetch_time", 0),
     )

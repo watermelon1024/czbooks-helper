@@ -64,6 +64,6 @@ async def fetch_book(code: str, first: bool = True) -> "Novel":
         word_count=0,
         hashtags=hashtags,
         chapter_list=chapter_lists,
-        comments=[],
+        comment=[],
         last_fetch_time=now_timestamp(),
     )
