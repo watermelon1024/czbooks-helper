@@ -91,11 +91,11 @@ class GetContent:
                     print(f"Error when getting {ch.url}: {e}")
                     content += f"\n\n{'='*30} 本章擷取失敗 {'='*30}\n\n請至網站閱讀：{ch.url}"
 
-        with open(f"./data/{book.code}.txt", "w", encoding="utf-8") as file:
+        with open(f"./data/{book.id}.txt", "w", encoding="utf-8") as file:
             _s = (
-                f"{book.title}\n"
-                f"連結：https://czbooks.net/n/{book.code}\n"
-                f"作者：{book.author.text}\n"
+                f"{book.info.title}\n"
+                f"連結：https://czbooks.net/n/{book.id}\n"
+                f"作者：{book.info.author.name}\n"
                 f"總章數：{state.total}\n"
                 f"總字數：{word_count}\n"
                 f"{content}"

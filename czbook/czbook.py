@@ -1,7 +1,9 @@
-from .novel_info import NovelInfo, Author, Category, HashtagList
-from .chapter import ChapterList
+from .novel_info import NovelInfo, Author, Category, HashtagList, Thumbnail
+from .chapter import ChapterList, ChapterInfo
 from .comment import CommentList
 from .get_content import GetContent, GetContentState
+from .http import fetch_as_html
+from .timestamp import now_timestamp
 
 
 class Novel:
@@ -79,3 +81,48 @@ class Novel:
             comment=CommentList(id),
             last_fetch_time=data.get("last_fetch_time", 0),
         )
+
+
+async def fetch_novel(id: str, first: bool = True) -> Novel:
+    soup = await fetch_as_html(f"https://czbooks.net/n/{id}")
+    # state / detail / info
+    state_children = soup.find("div", class_="state").find_all("td")
+    detail_div = soup.find("div", class_="novel-detail")
+    thumbnail_url = detail_div.find("img").get("src")
+    category_a = state_children[9].contents[0].text
+    info = NovelInfo(
+        id=id,
+        title=detail_div.find("span", class_="title").text,
+        description=detail_div.find("div", class_="description").text,
+        thumbnail=Thumbnail(thumbnail_url)
+        if thumbnail_url.startswith("https://img.czbooks.net")
+        else None,
+        author=Author(detail_div.find("span", class_="author").contents[1].text),
+        state=state_children[1].text,
+        last_update=state_children[7].text,
+        views=state_children[5].text,
+        category=Category(category_a.text, "https:" + category_a["href"]),
+        hashtags=HashtagList.from_list(
+            [
+                hashtag.text
+                for hashtag in soup.find("ul", class_="hashtag").find_all("a")[:-1]
+            ]
+        ),
+    )
+    if info.thumbnail and first:
+        info.thumbnail.theme_color
+    # chapter list
+    chapter_list = ChapterList(
+        [
+            ChapterInfo(chapter.text, "https:" + chapter["href"])
+            for chapter in soup.find("ul", id="chapter-list").find_all("a")
+        ]
+    )
+
+    return Novel(
+        id=id,
+        info=info,
+        chapter_list=chapter_list,
+        comment=CommentList(),
+        last_fetch_time=now_timestamp(),
+    )
