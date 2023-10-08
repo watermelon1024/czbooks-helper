@@ -43,13 +43,13 @@ class NovelInfo:
         category: Category,
         hashtags: HashtagList,
     ) -> None:
-        id = id
-        title = title
-        description = description
-        thumbnail = thumbnail
-        author = author
-        state = state
-        last_update = last_update
-        views = views
-        category = category
-        hashtags = hashtags
+        self.id = id
+        self.title = title
+        self.description = description
+        self.thumbnail = thumbnail
+        self.author = author
+        self.state = state
+        self.last_update = last_update
+        self.views = views
+        self.category = category
+        self.hashtags = hashtags

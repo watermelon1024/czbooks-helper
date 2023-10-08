@@ -7,5 +7,5 @@ class Hashtag(HyperLink):
 
 
 class HashtagList(list):
-    def __inti__(self, hashtag_list: list[Hashtag]) -> None:
+    def __init__(self, hashtag_list: list[Hashtag]) -> None:
         return super().__init__(hashtag_list)
