@@ -3,10 +3,9 @@ import re
 from typing import TYPE_CHECKING
 
 import aiohttp
-from bs4 import BeautifulSoup
 
 from .const import RE_CHINESE_CHARS
-from .http import fetch_url
+from .http import fetch_as_html
 from .timestamp import now_timestamp, time_diff, is_out_of_date
 
 if TYPE_CHECKING:
@@ -76,9 +75,7 @@ class GetContent:
             for index, ch in enumerate(book.chapter_list, start=1):
                 state.current = index
                 try:
-                    soup = BeautifulSoup(
-                        await fetch_url(session, ch.url), "html.parser"
-                    )
+                    soup = await fetch_as_html(ch.url, session)
                     ch_name = soup.find("div", class_="name")
                     # 尋找內文
                     div_content = ch_name.find_next("div", class_="content")

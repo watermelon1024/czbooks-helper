@@ -2,7 +2,7 @@ from typing import Literal
 
 from .const import DICT_SEARCH_BY
 from .czbook import get_code
-from .http import get_html
+from .http import fetch_as_html
 from .timestamp import now_timestamp, is_out_of_date
 
 
@@ -27,7 +27,7 @@ async def search(
 ) -> list[SearchResult] | None:
     if not (_by := DICT_SEARCH_BY.get(by)):
         raise ValueError(f'Unknown value "{by}" of by')
-    soup = await get_html(f"https://czbooks.net/{_by}/{keyword}/{page}")
+    soup = await fetch_as_html(f"https://czbooks.net/{_by}/{keyword}/{page}")
 
     if not (
         novel_list_ul := soup.find(

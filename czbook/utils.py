@@ -1,3 +1,6 @@
+import re
+
+from const import RE_BOOK_CODE
 from .http import HyperLink
 
 # flake8: noqa: F401
@@ -23,3 +26,9 @@ def hyper_link_list_to_str(
         text += text_
 
     return text + text_end
+
+
+def get_code(s: str) -> str | None:
+    if match := re.search(RE_BOOK_CODE, s):
+        return match.group(2)
+    return None
