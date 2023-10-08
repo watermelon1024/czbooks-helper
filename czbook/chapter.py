@@ -11,7 +11,10 @@ class ChapterInfo:
             self._maybe_not_content = len(self.content) < 1024
         return self._maybe_not_content
 
+    def to_dict(self) -> dict:
+        return {"name": self.name, "url": self.url}
 
-class ChapterList(list):
+
+class ChapterList(list[ChapterInfo]):
     def __init__(self, chapter_list: list[ChapterInfo] = []) -> None:
         super().__init__(chapter_list)

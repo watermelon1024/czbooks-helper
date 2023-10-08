@@ -1,7 +1,7 @@
 import aiohttp
 
 
-class CommentField:
+class Comment:
     def __init__(
         self,
         comment_id: str,
@@ -26,13 +26,13 @@ class CommentField:
         }
 
 
-class Comment(list):
-    def __init__(self, novel_code: str, comment_list: list[CommentField] = []) -> None:
+class CommentList(list[Comment]):
+    def __init__(self, novel_code: str, comment_list: list[Comment] = []) -> None:
         self.novel_code = novel_code
         super().__init__(comment_list)
 
     async def update(self) -> None:
-        self: list[CommentField] = []
+        self: list[Comment] = []
         page = 1
         async with aiohttp.ClientSession() as session:
             while True:
@@ -43,7 +43,7 @@ class Comment(list):
                     items = data["data"]["items"]
                 self.extend(
                     [
-                        CommentField(
+                        Comment(
                             comment["id"],
                             comment["nickname"],
                             comment["message"],

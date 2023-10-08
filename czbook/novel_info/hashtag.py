@@ -6,6 +6,6 @@ class Hashtag(HyperLink):
         super().__init__(name, f"https://czbooks.net/hashtag/{name}")
 
 
-class HashtagList(list):
+class HashtagList(list[Hashtag]):
     def __init__(self, hashtag_list: list[Hashtag]) -> None:
         return super().__init__(hashtag_list)
