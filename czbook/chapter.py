@@ -5,6 +5,7 @@ class ChapterInfo:
         self.content = content
         self._maybe_not_content: bool = None
 
+    @property
     def maybe_not_conetent(self):
         if self._maybe_not_content is None:
             self._maybe_not_content = len(self.content) < 1024
