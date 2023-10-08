@@ -17,10 +17,10 @@ class NovelInfo:
     author: `Author`
         the author of the novel
     state: `str`
-        the state of the novel
+        the state of the novel.
         usually is `連載中` or `已完結`
     last_update: `str`
-        the latest time when the novel update
+        the latest time when the novel update.
         format: `YYYY-MM-DD`
     views: `int`
         the views of the novel
