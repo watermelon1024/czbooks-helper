@@ -1,20 +1,7 @@
-from .http import HyperLink
+from .author import Author
 from .category import Category
-
-
-class Author(HyperLink):
-    def __init__(self, name: str) -> None:
-        self.name = name
-        super().__init__(name, f"https://czbooks.net/a/{name}")
-
-
-class Thumbnail:
-    def __init__(self, url: str) -> None:
-        self.url = url
-
-    @property
-    def theme_color(self):
-        ...
+from .hashtag import HashtagList
+from .thumbnail import Thumbnail
 
 
 class NovelInfo:
@@ -26,7 +13,7 @@ class NovelInfo:
     description: `str`
         the description of the novel
     thumbnail: `Thumbnail`
-        the description of the novel
+        the thumbnail of the novel
     author: `Author`
         the author of the novel
     state: `str`
@@ -39,8 +26,8 @@ class NovelInfo:
         the views of the novel
     category: `Category`
         the category of the novel
-    hashtag: list[HyperLink]
-        the description of the novel
+    hashtag: `HashtagList`
+        the list of the novel hashtags
     """
 
     def __init__(
@@ -54,7 +41,7 @@ class NovelInfo:
         last_update: str,
         views: int,
         category: Category,
-        hashtags: list[HyperLink],
+        hashtags: HashtagList,
     ) -> None:
         id = id
         title = title

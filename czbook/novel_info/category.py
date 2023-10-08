@@ -1,4 +1,4 @@
-from .http import HyperLink
+from ..http import HyperLink
 
 
 class Category(HyperLink):
