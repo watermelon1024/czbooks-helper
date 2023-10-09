@@ -29,6 +29,42 @@ class Novel:
         self._comment_last_update: float = 0
         self._get_content_state: GetContentState = None
 
+    @property
+    def title(self):
+        return self.info.title
+
+    @property
+    def description(self):
+        return self.info.description
+
+    @property
+    def thumbnail(self):
+        return self.info.thumbnail
+
+    @property
+    def author(self):
+        return self.info.author
+
+    @property
+    def state(self):
+        return self.info.state
+
+    @property
+    def last_update(self):
+        return self.info.last_update
+
+    @property
+    def views(self):
+        return self.info.views
+
+    @property
+    def category(self):
+        return self.info.category
+
+    @property
+    def hashtags(self):
+        return self.info.hashtags
+
     async def update_comments(self) -> None:
         await self.comment.update()
 
