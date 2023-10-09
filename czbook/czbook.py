@@ -1,3 +1,4 @@
+import asyncio
 from .novel_info import NovelInfo, Author, Category, HashtagList, Thumbnail
 from .chapter import ChapterList, ChapterInfo
 from .comment import CommentList
@@ -11,16 +12,16 @@ class Novel:
         self,
         id: str,
         info: NovelInfo,
-        # content_cache: bool,
-        # word_count: int,
+        content_cache: bool,
+        word_count: int,
         chapter_list: ChapterList,
         comment: CommentList,
         last_fetch_time: float = 0,
     ) -> None:
         self.id = id
         self.info = info
-        # self.content_cache = content_cache
-        # self.word_count = word_count
+        self.content_cache = content_cache
+        self.word_count = word_count
         self.chapter_list = chapter_list
         self.comment = comment
         self.last_fetch_time = last_fetch_time
@@ -31,9 +32,26 @@ class Novel:
     async def update_comments(self) -> None:
         await self.comment.update()
 
+    async def _get_content(self) -> None:
+        content, word_count = await self._get_content_state.task
+        with open(f"./data/{self.id}.txt", "w", encoding="utf-8") as file:
+            _s = (
+                f"{self.info.title}\n"
+                f"連結：https://czbooks.net/n/{self.id}\n"
+                f"作者：{self.info.author.name}\n"
+                f"總章數：{self.chapter_list}\n"
+                f"總字數：{word_count}\n"
+                f"{content}"
+            )
+            file.write(_s)
+        self.word_count = word_count
+        self.content_cache = True
+        self._overview_embed_cache = None
+
     def get_content(self) -> GetContentState:
         if not self._get_content_state:
             self._get_content_state = GetContent.start(self)
+            asyncio.run(self._get_content())
         return self._get_content_state
 
     def cencel_get_content(self) -> None:
