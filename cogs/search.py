@@ -102,7 +102,7 @@ class SearchCog(BaseCog):
         )
         await ctx.defer()
         if results := await czbook.search_advance(
-            name=name or None, hashtag=hashtag or None, author=author or None
+            name=name or None, hashtag=hashtag.split(",") or None, author=author or None
         ):
             return await ctx.respond(
                 embed=Embed(
@@ -155,9 +155,9 @@ class SearchView(View):
         print(f"{interaction.user} used /info link: {code}")
         await interaction.response.defer()
 
-        book = await self.bot.get_or_fetch_book(code)
+        novel = await self.bot.get_or_fetch_novel(code)
         await interaction.followup.send(
-            embed=book.overview_embed(),
+            embed=novel.overview_embed(),
             view=InfoView(self.bot),
         )
 
