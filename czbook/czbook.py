@@ -47,7 +47,7 @@ class Novel:
             "code": self.id,
             "title": self.info.title,
             "description": self.info.description,
-            "thumbnail": self.info.thumbnail,
+            "thumbnail": self.info.thumbnail.to_dict(),
             "author": self.info.author.to_dict(),
             "state": self.info.state,
             "last_update": self.info.last_update,
@@ -69,7 +69,11 @@ class Novel:
                 id=id,
                 title=data.get("title"),
                 description=data.get("description"),
-                thumbnail=data.get("thumbnail"),
+                thumbnail=(
+                    Thumbnail.from_json(thumbnail)
+                    if (thumbnail := data.get("thumbnail"))
+                    else None
+                ),
                 author=Author(data.get("author")),
                 state=data.get("state"),
                 last_update=data.get("last_update"),
