@@ -11,9 +11,9 @@ class HashtagList(list[Hashtag]):
         return super().__init__(hashtag_list)
 
     @classmethod
-    def from_list(cls: "HashtagList", list_: list) -> "HashtagList":
+    def from_list(cls: type["HashtagList"], list_: list) -> "HashtagList":
         """
         Load from list.
         list must be like: ["name1", "name2", ...]
         """
-        return HashtagList([Hashtag(name) for name in list_])
+        return cls([Hashtag(name) for name in list_])

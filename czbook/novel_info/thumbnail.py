@@ -18,12 +18,12 @@ class Thumbnail:
         return {"url": self.url, "theme_color": self.theme_color}
 
     @classmethod
-    def from_json(cls: "Thumbnail", data: dict) -> "Thumbnail":
+    def from_json(cls: type["Thumbnail"], data: dict) -> "Thumbnail":
         """
         Load from json format.
         JSON must be like {"url": ..., "theme_color": ...}
         """
-        thumbnail = Thumbnail(data.get("url"))
+        thumbnail = cls(data.get("url"))
         thumbnail._theme_color = data.get("theme_color")
         return thumbnail
 

@@ -62,8 +62,8 @@ class Novel:
         }
 
     @classmethod
-    def load_from_json(cls: "Novel", data: dict) -> "Novel":
-        return Novel(
+    def load_from_json(cls: type["Novel"], data: dict) -> "Novel":
+        return cls(
             id=(id := data.get("id")),
             info=NovelInfo(
                 id=id,

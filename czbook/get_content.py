@@ -108,7 +108,7 @@ class GetContent:
         return content, word_count
 
     @classmethod
-    def start(cls: "GetContent", book: "Novel") -> GetContentState:
+    def start(cls: type["GetContent"], book: "Novel") -> GetContentState:
         state = GetContentState(None, None, 0, len(book.chapter_list))
         task = asyncio.create_task(cls.get_content(cls, book, state))
         state.task = task
