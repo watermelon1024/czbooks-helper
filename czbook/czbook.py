@@ -3,7 +3,7 @@ from .chapter import ChapterList, ChapterInfo
 from .comment import CommentList
 from .get_content import GetContent, GetContentState
 from .http import fetch_as_html
-from .timestamp import now_timestamp
+from .utils import now_timestamp
 
 
 class Novel:

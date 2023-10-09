@@ -1,10 +1,7 @@
 import re
 
-from const import RE_BOOK_CODE
-from .http import HyperLink
-
-# flake8: noqa: F401
-from .timestamp import now_timestamp, is_out_of_date
+from ..const import RE_BOOK_CODE
+from ..http import HyperLink
 
 
 def hyper_link_list_to_str(

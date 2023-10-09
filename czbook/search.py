@@ -1,9 +1,8 @@
 from typing import Literal
 
 from .const import DICT_SEARCH_BY
-from .czbook import get_code
+from .utils import get_code, now_timestamp, is_out_of_date
 from .http import fetch_as_html
-from .timestamp import now_timestamp, is_out_of_date
 
 
 class SearchResult:

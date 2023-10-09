@@ -6,7 +6,7 @@ import aiohttp
 
 from .const import RE_CHINESE_CHARS
 from .http import fetch_as_html
-from .timestamp import now_timestamp, time_diff, is_out_of_date
+from .utils import now_timestamp, time_diff, is_out_of_date
 
 if TYPE_CHECKING:
     from .czbook import Novel
