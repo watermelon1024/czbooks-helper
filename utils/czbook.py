@@ -12,8 +12,8 @@ class Novel(czbook.Novel):
 
     def get_theme_color(self) -> Colour:
         return (
-            Colour(random.choice(self.info.thumbnail.theme_color))
-            if self.info.thumbnail
+            Colour(random.choice(self.thumbnail.theme_color))
+            if self.thumbnail
             else Colour.random()
         )
 
@@ -23,14 +23,14 @@ class Novel(czbook.Novel):
             return self._overview_embed_cache
 
         embed = Embed(
-            title=self.info.title,
+            title=self.title,
             description=(
-                f"- 作　者：{self.info.author}\n"
-                f"- 狀　態：{self.info.state} ({self.info.last_update}更新)\n"
+                f"- 作　者：{self.author}\n"
+                f"- 狀　態：{self.state} ({self.last_update}更新)\n"
                 f"- 總字數：{f'`{self.word_count}`字' if self.word_count else '`點擊取得內文以取得字數`'}\n"
-                f"- 觀看數：`{self.info.views}`次\n"
+                f"- 觀看數：`{self.views}`次\n"
                 f"- 章節數：`{len(self.chapter_list)}`章\n"
-                f"- 分　類：{self.info.category}"
+                f"- 分　類：{self.category}"
             ),
             url=f"https://czbooks.net/n/{self.id}",
             color=self.get_theme_color(),
@@ -38,23 +38,23 @@ class Novel(czbook.Novel):
         embed.add_field(
             name="書本簡述",
             value=(
-                self.info.description
-                if len(self.info.description) < 1024
-                else self.info.description[:1021] + "⋯⋯"
+                self.description
+                if len(self.description) < 1024
+                else self.description[:1021] + "⋯⋯"
             ),
             inline=False,
         )
         embed.add_field(
             name="標籤",
             value=(
-                czbook.utils.hyper_link_list_to_str(self.info.hashtags, 1024, "、", "⋯⋯")
-                if self.info.hashtags
+                czbook.utils.hyper_link_list_to_str(self.hashtags, 1024, "、", "⋯⋯")
+                if self.hashtags
                 else "尚無標籤"
             ),
             inline=False,
         )
-        if self.info.thumbnail:
-            embed.set_thumbnail(url=self.info.thumbnail.url)
+        if self.thumbnail:
+            embed.set_thumbnail(url=self.thumbnail.url)
 
         self._overview_embed_cache = embed
         return self._overview_embed_cache
@@ -65,7 +65,7 @@ class Novel(czbook.Novel):
             return self._chapter_embed_cache
 
         self._chapter_embed_cache = Embed(
-            title=f"{self.info.title}章節列表",
+            title=f"{self.title}章節列表",
             description=czbook.utils.hyper_link_list_to_str(
                 self.chapter_list, 4096, "、", "⋯⋯"
             ),
@@ -105,7 +105,7 @@ class Novel(czbook.Novel):
 
 def _comment_embed(novel: Novel) -> Embed:
     embed = Embed(
-        title=f"{novel.info.title}評論列表",
+        title=f"{novel.title}評論列表",
         url=f"https://czbooks.net/n/{novel.id}",
         color=novel.get_theme_color(),
     )

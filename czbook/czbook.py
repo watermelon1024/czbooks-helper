@@ -72,9 +72,9 @@ class Novel:
         content, word_count = await self._get_content_state.task
         with open(f"./data/{self.id}.txt", "w", encoding="utf-8") as file:
             _s = (
-                f"{self.info.title}\n"
+                f"{self.title} —— {self.author.name}\n"
                 f"連結：https://czbooks.net/n/{self.id}\n"
-                f"作者：{self.info.author.name}\n"
+                f"作者：{self.author.name}\n"
                 f"總章數：{self.chapter_list}\n"
                 f"總字數：{word_count}\n"
                 f"{content}"
@@ -99,17 +99,17 @@ class Novel:
     def to_dict(self) -> dict:
         return {
             "code": self.id,
-            "title": self.info.title,
-            "description": self.info.description,
-            "thumbnail": self.info.thumbnail.to_dict(),
-            "author": self.info.author.to_dict(),
-            "state": self.info.state,
-            "last_update": self.info.last_update,
-            "views": self.info.views,
-            "category": self.info.category.to_dict(),
+            "title": self.title,
+            "description": self.description,
+            "thumbnail": self.thumbnail.to_dict(),
+            "author": self.author.to_dict(),
+            "state": self.state,
+            "last_update": self.last_update,
+            "views": self.views,
+            "category": self.category.to_dict(),
             # "content_cache": self.content_cache,
             # "words_count": self.word_count,
-            "hashtags": [hashtag.to_dict() for hashtag in self.info.hashtags],
+            "hashtags": [hashtag.to_dict() for hashtag in self.hashtags],
             "chapter_list": [chapter.to_dict() for chapter in self.chapter_list],
             # "comments": [comment.to_dict() for comment in self.comments],
             "last_fetch_time": self.last_fetch_time,
