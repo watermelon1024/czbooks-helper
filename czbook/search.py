@@ -6,17 +6,15 @@ from .http import fetch_as_html
 
 
 class SearchResult:
-    def __init__(self, book_title: str, code: str) -> None:
-        self.book_title = book_title
-        self.code = code
+    def __init__(self, novel_title: str, id: str) -> None:
+        self.novel_title = novel_title
+        self.id = id
 
-    def __eq__(self, __value: object) -> bool:
-        if isinstance(__value, SearchResult):
-            return self.code == __value.code
-        return False
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, SearchResult) and other.id == self.id
 
     def __hash__(self) -> int:
-        return hash(self.code)
+        return hash(self.id)
 
 
 async def search(
@@ -37,8 +35,8 @@ async def search(
 
     return [
         SearchResult(
-            book_title=novel.find("div", class_="novel-item-title").text.strip(),
-            code=get_code(novel.find("a").get("href")),
+            novel_title=novel.find("div", class_="novel-item-title").text.strip(),
+            id=get_code(novel.find("a").get("href")),
         )
         for novel in novel_list_ul
     ]

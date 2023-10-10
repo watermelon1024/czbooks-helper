@@ -50,7 +50,7 @@ class SearchCog(BaseCog):
                 embed=Embed(
                     title="搜尋結果",
                     description="\n".join(
-                        f"{index}. [{novel.book_title}](https://czbooks.net/n/{novel.code})"  # noqa
+                        f"{index}. [{novel.novel_title}](https://czbooks.net/n/{novel.id})"  # noqa
                         for index, novel in enumerate(results[:20], start=1)
                     ),
                     color=discord.Color.green(),
@@ -108,7 +108,7 @@ class SearchCog(BaseCog):
                 embed=Embed(
                     title="搜尋結果",
                     description="\n".join(
-                        f"{index}. [{novel.book_title}](https://czbooks.net/n/{novel.code})"  # noqa
+                        f"{index}. [{novel.novel_title}](https://czbooks.net/n/{novel.id})"  # noqa
                         for index, novel in enumerate(results[:20], start=1)
                     ),
                     color=discord.Color.green(),
@@ -140,8 +140,8 @@ class SearchView(View):
             placeholder="請選擇",
             options=[
                 discord.SelectOption(
-                    label=f"{index}. {novel.book_title}",
-                    value=novel.code,
+                    label=f"{index}. {novel.novel_title}",
+                    value=novel.id,
                 )
                 for index, novel in enumerate(options, start=1)
             ],
