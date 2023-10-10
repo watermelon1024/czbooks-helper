@@ -9,15 +9,15 @@ from dotenv import load_dotenv
 import czbook
 from czbook.utils import is_out_of_date
 
-from .utils.czbook import Novel
+from utils.czbook import Novel
 
 load_dotenv()
 
-BOOK_CACHE_FILE = "./data/books.json"
+NOVEL_CACHE_FILE = "./data/novel.json"
 novel_cache: dict[str, Novel] = {}
 
 try:
-    with open(BOOK_CACHE_FILE, "r", encoding="utf-8") as file:
+    with open(NOVEL_CACHE_FILE, "r", encoding="utf-8") as file:
         data: dict[str, dict] = json.load(file)
         novel_cache = {id: Novel.load_from_json(detail) for id, detail in data.items()}
 except Exception as e:
@@ -90,7 +90,7 @@ class Bot(discord.Bot):
         return novel
 
     def save_cache_to_file(self) -> None:
-        with open(BOOK_CACHE_FILE, "w", encoding="utf-8") as file:
+        with open(NOVEL_CACHE_FILE, "w", encoding="utf-8") as file:
             json.dump(
                 self.novel_cache, file, default=novel_serializer, ensure_ascii=False
             )
