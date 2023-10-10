@@ -147,7 +147,7 @@ async def fetch_novel(id: str, first: bool = True) -> Novel:
     state_children = soup.find("div", class_="state").find_all("td")
     detail_div = soup.find("div", class_="novel-detail")
     thumbnail_url = detail_div.find("img").get("src")
-    category_a = state_children[9].contents[0].text
+    category_a = state_children[9].contents[0]
     info = NovelInfo(
         id=id,
         title=detail_div.find("span", class_="title").text,
@@ -168,7 +168,7 @@ async def fetch_novel(id: str, first: bool = True) -> Novel:
         ),
     )
     if info.thumbnail and first:
-        info.thumbnail.theme_color
+        await info.thumbnail.get_theme_colors()
     # chapter list
     chapter_list = ChapterList(
         [
@@ -180,7 +180,9 @@ async def fetch_novel(id: str, first: bool = True) -> Novel:
     return Novel(
         id=id,
         info=info,
+        content_cache=False,
+        word_count=0,
         chapter_list=chapter_list,
-        comment=CommentList(),
+        comment=CommentList(id),
         last_fetch_time=now_timestamp(),
     )

@@ -1,5 +1,3 @@
-import asyncio
-
 from .. import color
 
 
@@ -11,8 +9,15 @@ class Thumbnail:
     @property
     def theme_color(self) -> list[int]:
         if self._theme_color is None:
-            self._theme_color = asyncio.run(_get_theme_colors())
+            raise RuntimeError(
+                "Theme color hasn't been gotten, please run 'get_theme_color' first"
+            )
         return self._theme_color
+
+    async def get_theme_colors(self) -> None:
+        self._theme_color = color.extract_theme_light_colors_hex(
+            await color.get_img_from_url(self.url)
+        )
 
     def to_dict(self) -> dict:
         return {"url": self.url, "theme_color": self.theme_color}
@@ -26,7 +31,3 @@ class Thumbnail:
         thumbnail = cls(data.get("url"))
         thumbnail._theme_color = data.get("theme_color")
         return thumbnail
-
-
-async def _get_theme_colors(url: str) -> list[int]:
-    return color.extract_theme_light_colors_hex(await color.get_img_from_url(url))
