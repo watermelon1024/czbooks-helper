@@ -47,7 +47,7 @@ async def _fetch_url(
     except Exception as e:
         if now_retry < max_retry:
             await asyncio.sleep(now_retry)
-            return await _fetch_url(session, url, max_retry, now_retry + 1)
+            return await _fetch_url(session, url, encode_type, max_retry, now_retry + 1)
         raise e
 
 
@@ -61,16 +61,16 @@ async def fetch_url(
 
 
 async def fetch_as_text(url: str, session: ClientSession = None) -> str:
-    # if session:
-    #     return await (await fetch_url(session, url)).text()
-    async with session or ClientSession() as session:
+    if session:
+        return await fetch_url(session, url, "text")
+    async with ClientSession() as session:
         return await fetch_url(session, url, "text")
 
 
 async def fetch_as_json(url: str, session: ClientSession = None) -> dict:
-    # if session:
-    #     return await (await fetch_url(session, url)).json()
-    async with session or ClientSession() as session:
+    if session:
+        return await fetch_url(session, url, "json")
+    async with ClientSession() as session:
         return await fetch_url(session, url, "json")
 
 
