@@ -109,7 +109,7 @@ class InfoView(View):
         novel = await self.bot.get_or_fetch_novel(
             czbook.utils.get_code(interaction.message.embeds[0].url)
         )
-        await interaction.response.edit_message(embed=novel.overview_embed(), view=self)
+        await interaction.message.edit(embed=novel.overview_embed(), view=self)
 
     async def chapter_button_callback(self, interaction: Interaction):
         self.overview_button.disabled = False
@@ -122,7 +122,7 @@ class InfoView(View):
         novel = await self.bot.get_or_fetch_novel(
             czbook.utils.get_code(interaction.message.embeds[0].url)
         )
-        await interaction.response.edit_message(embed=novel.chapter_embed(), view=self)
+        await interaction.message.edit(embed=novel.chapter_embed(), view=self)
 
     async def comment_button_callback(self, interaction: Interaction):
         self.overview_button.disabled = False
