@@ -75,7 +75,7 @@ class Novel:
                 f"{self.title} —— {self.author.name}\n"
                 f"連結：https://czbooks.net/n/{self.id}\n"
                 f"作者：{self.author.name}\n"
-                f"總章數：{self.chapter_list}\n"
+                f"總章數：{self.chapter_list.total_chapter_count}\n"
                 f"總字數：{word_count}\n"
                 f"{content}"
             )

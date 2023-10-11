@@ -85,7 +85,11 @@ class Bot(discord.Bot):
                 novel.last_fetch_time = now
                 updated_novel = await self.fetch_novel(novel.id, False)
                 updated_novel.info.thumbnail = novel.info.thumbnail
+                updated_novel.word_count = novel.word_count
+                updated_novel.content_cache = novel.content_cache
                 self.add_cache(updated_novel)
+                return updated_novel
+            return novel
         self.add_cache(novel := await self.fetch_novel(id))
         return novel
 
