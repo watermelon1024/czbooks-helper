@@ -82,11 +82,10 @@ class Novel:
             file.write(_s)
         self.word_count = word_count
         self.content_cache = True
-        self._overview_embed_cache = None
 
     def get_content(self) -> GetContentState:
         if not self._get_content_state:
-            self._get_content_state = GetContent.start(self)
+            self._get_content_state = GetContent.start(self.chapter_list)
             loop = asyncio.get_event_loop()
             loop.create_task(self._get_content())
         return self._get_content_state
@@ -136,6 +135,8 @@ class Novel:
                 category=Category(*data.get("category").values()),
                 hashtags=HashtagList.from_list(data.get("hashtags", [])),
             ),
+            content_cache=data.get("content_cache"),
+            word_count=data.get("words_count"),
             chapter_list=ChapterList(),
             comment=CommentList(id),
             last_fetch_time=data.get("last_fetch_time", 0),

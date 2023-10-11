@@ -86,6 +86,10 @@ class Novel(czbook.Novel):
 
         return self._comment_embed_cache
 
+    async def _get_content(self) -> None:
+        await super()._get_content()
+        self._overview_embed_cache = None
+
     @classmethod
     def load_from_json(cls: type["Novel"], data: dict) -> "Novel":
         return cls.from_original_novel(super().load_from_json(data))
