@@ -28,6 +28,9 @@ class ChapterInfo:
     def to_dict(self) -> dict:
         return {"name": self.name, "url": self.url}
 
+    def __str__(self) -> str:
+        return f"[{self.name}]({self.url})"
+
 
 class ChapterList(list[ChapterInfo]):
     def __init__(self, chapter_list: list[ChapterInfo] = []) -> None:
