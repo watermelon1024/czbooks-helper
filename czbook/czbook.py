@@ -87,7 +87,8 @@ class Novel:
     def get_content(self) -> GetContentState:
         if not self._get_content_state:
             self._get_content_state = GetContent.start(self)
-            asyncio.run(self._get_content())
+            loop = asyncio.get_event_loop()
+            loop.create_task(self._get_content())
         return self._get_content_state
 
     def cencel_get_content(self) -> None:
@@ -101,7 +102,7 @@ class Novel:
             "code": self.id,
             "title": self.title,
             "description": self.description,
-            "thumbnail": self.thumbnail.to_dict(),
+            "thumbnail": self.thumbnail.to_dict() if self.thumbnail else None,
             "author": self.author.to_dict(),
             "state": self.state,
             "last_update": self.last_update,
