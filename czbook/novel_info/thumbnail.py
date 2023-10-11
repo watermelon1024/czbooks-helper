@@ -3,8 +3,12 @@ from .. import color
 
 class Thumbnail:
     def __init__(self, url: str) -> None:
-        self.url = url
+        self._url = url
         self._theme_color: list[int] = None
+
+    @property
+    def url(self) -> str:
+        return self._url
 
     @property
     def theme_color(self) -> list[int]:
@@ -14,10 +18,11 @@ class Thumbnail:
             )
         return self._theme_color
 
-    async def get_theme_colors(self) -> None:
+    async def get_theme_colors(self) -> list[int]:
         self._theme_color = color.extract_theme_light_colors_hex(
             await color.get_img_from_url(self.url)
         )
+        return self._theme_color
 
     def to_dict(self) -> dict:
         return {"url": self.url, "theme_color": self.theme_color}
