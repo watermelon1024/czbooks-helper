@@ -6,28 +6,27 @@ import discord
 
 from dotenv import load_dotenv
 
-from czbook import load_from_json, fetch_book
-from utils.czbook import Book
-from utils.timestamp import is_out_of_date
+import czbook
+from czbook.utils import is_out_of_date
+
+from utils.czbook import Novel
 
 load_dotenv()
 
-BOOK_CACHE_FILE = "./data/books.json"
-book_cache: dict[str, Book] = {}
+NOVEL_CACHE_FILE = "./data/novel.json"
+novel_cache: dict[str, Novel] = {}
 
 try:
-    with open(BOOK_CACHE_FILE, "r", encoding="utf-8") as file:
+    with open(NOVEL_CACHE_FILE, "r", encoding="utf-8") as file:
         data: dict[str, dict] = json.load(file)
-        book_cache = {
-            code: Book(*load_from_json(detail).__dict__.values()) for code, detail in data.items()
-        }
+        novel_cache = {id: Novel.load_from_json(detail) for id, detail in data.items()}
 except Exception as e:
     print(f"error load db file, using empty cache.\n{e}")
-    book_cache = {}
+    novel_cache = {}
 
 
-def czbook_serializer(obj):
-    if isinstance(obj, Book):
+def novel_serializer(obj):
+    if isinstance(obj, Novel):
         return obj.to_dict()
     raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
@@ -35,7 +34,7 @@ def czbook_serializer(obj):
 class Bot(discord.Bot):
     def __init__(self, description=None, *args, **options):
         super().__init__(description, *args, **options)
-        self.book_cache: dict[str, Book] = book_cache
+        self.novel_cache: dict[str, Novel] = novel_cache
         self._last_save_cache_time = 0
         self.get_content_msg: set = set()
 
@@ -63,38 +62,41 @@ class Bot(discord.Bot):
         print("Starting the bot...")
         super().run(token)
 
-    # czbook func #
-    def add_cache(self, book: Book) -> None:
-        self.book_cache[book.code] = book
+    # czbook function #
+    def add_cache(self, novel: Novel) -> None:
+        self.novel_cache[novel.id] = novel
         if now := is_out_of_date(self._last_save_cache_time, 60):
             self._last_save_cache_time = now
             self.save_cache_to_file()
 
-    def get_cache(self, code: str) -> Book | None:
-        return self.book_cache.get(code)
+    def get_cache(self, id: str) -> Novel | None:
+        return self.novel_cache.get(id)
 
-    async def fetch_book(self, code: str, first: bool = True) -> Book:
-        return Book(*(await fetch_book(code, first)).__dict__.values())
+    async def fetch_novel(self, id: str, first: bool = True) -> Novel:
+        return Novel.from_original_novel(await czbook.fetch_novel(id, first))
 
-    async def get_or_fetch_book(
-        self, code: str, update_when_out_of_date: bool = True
-    ) -> Book:
-        if book := self.get_cache(code):
+    async def get_or_fetch_novel(
+        self, id: str, update_when_out_of_date: bool = True
+    ) -> Novel:
+        if novel := self.get_cache(id):
             if update_when_out_of_date and (
-                now := is_out_of_date(book.last_fetch_time, 600)
+                now := is_out_of_date(novel.last_fetch_time, 600)
             ):
-                book.last_fetch_time = now
-                book_updated = await self.fetch_book(book.code, False)
-                book_updated.thumbnail = book.thumbnail
-                book_updated.theme_colors = book.theme_colors
-                self.add_cache(book_updated)
-        self.add_cache(book := await self.fetch_book(code))
-        return book
+                novel.last_fetch_time = now
+                updated_novel = await self.fetch_novel(novel.id, False)
+                updated_novel.info.thumbnail = novel.info.thumbnail
+                updated_novel.word_count = novel.word_count
+                updated_novel.content_cache = novel.content_cache
+                self.add_cache(updated_novel)
+                return updated_novel
+            return novel
+        self.add_cache(novel := await self.fetch_novel(id))
+        return novel
 
     def save_cache_to_file(self) -> None:
-        with open(BOOK_CACHE_FILE, "w", encoding="utf-8") as file:
+        with open(NOVEL_CACHE_FILE, "w", encoding="utf-8") as file:
             json.dump(
-                self.book_cache, file, default=czbook_serializer, ensure_ascii=False
+                self.novel_cache, file, default=novel_serializer, ensure_ascii=False
             )
 
 

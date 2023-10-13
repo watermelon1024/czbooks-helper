@@ -50,7 +50,7 @@ class SearchCog(BaseCog):
                 embed=Embed(
                     title="搜尋結果",
                     description="\n".join(
-                        f"{index}. [{novel.book_title}](https://czbooks.net/n/{novel.code})"  # noqa
+                        f"{index}. [{novel.novel_title}](https://czbooks.net/n/{novel.id})"  # noqa
                         for index, novel in enumerate(results[:20], start=1)
                     ),
                     color=discord.Color.green(),
@@ -102,13 +102,13 @@ class SearchCog(BaseCog):
         )
         await ctx.defer()
         if results := await czbook.search_advance(
-            name=name or None, hashtag=hashtag or None, author=author or None
+            name=name or None, hashtag=hashtag.split(",") or None, author=author or None
         ):
             return await ctx.respond(
                 embed=Embed(
                     title="搜尋結果",
                     description="\n".join(
-                        f"{index}. [{novel.book_title}](https://czbooks.net/n/{novel.code})"  # noqa
+                        f"{index}. [{novel.novel_title}](https://czbooks.net/n/{novel.id})"  # noqa
                         for index, novel in enumerate(results[:20], start=1)
                     ),
                     color=discord.Color.green(),
@@ -140,8 +140,8 @@ class SearchView(View):
             placeholder="請選擇",
             options=[
                 discord.SelectOption(
-                    label=f"{index}. {novel.book_title}",
-                    value=novel.code,
+                    label=f"{index}. {novel.novel_title}",
+                    value=novel.id,
                 )
                 for index, novel in enumerate(options, start=1)
             ],
@@ -155,9 +155,9 @@ class SearchView(View):
         print(f"{interaction.user} used /info link: {code}")
         await interaction.response.defer()
 
-        book = await self.bot.get_or_fetch_book(code)
+        novel = await self.bot.get_or_fetch_novel(code)
         await interaction.followup.send(
-            embed=book.overview_embed(),
+            embed=novel.overview_embed(),
             view=InfoView(self.bot),
         )
 

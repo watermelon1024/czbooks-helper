@@ -1,7 +1,7 @@
-from .http import HyperLink
+import re
 
-# flake8: noqa: F401
-from .timestamp import now_timestamp, is_out_of_date
+from ..const import RE_BOOK_CODE
+from ..http import HyperLink
 
 
 def hyper_link_list_to_str(
@@ -16,10 +16,16 @@ def hyper_link_list_to_str(
     )
     text = ""
     for hyper_link in hyper_links[:-8]:
-        text_len += len(text_ := f"{hyper_link}{comma}")
-        if text_len > max_len:
+        text_len += len(text_ := f"{str(hyper_link)}{comma}")
+        if text_len >= max_len:
             text += f"{ellipsis}{comma}"
             break
         text += text_
 
     return text + text_end
+
+
+def get_code(s: str) -> str | None:
+    if match := re.search(RE_BOOK_CODE, s):
+        return match.group(2)
+    return None

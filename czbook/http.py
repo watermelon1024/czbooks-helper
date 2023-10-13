@@ -1,6 +1,6 @@
 import asyncio
 
-import aiohttp
+from aiohttp import ClientSession
 
 from bs4 import BeautifulSoup
 
@@ -23,22 +23,13 @@ class HyperLink:
         }
 
 
-async def get(url: str) -> str:
-    async with aiohttp.ClientSession() as session:
-        return await fetch_url(session, url)
-
-
-async def get_html(url: str) -> BeautifulSoup:
-    async with aiohttp.ClientSession() as session:
-        return BeautifulSoup(await fetch_url(session, url), "html.parser")
-
-
 async def _fetch_url(
-    session: aiohttp.ClientSession,
+    session: ClientSession,
     url: str,
+    encode_type: str,
     max_retry: int,
     now_retry: int,
-) -> str:
+) -> str | dict:
     try:
         async with session.get(
             url, headers=CRAWLER_HEADER, timeout=DEFAULT_TIMEOUT
@@ -47,19 +38,41 @@ async def _fetch_url(
                 raise NotFoundError("404 Not found")
             if response.status == 429:
                 raise TooManyRequestsError("429 Too many requests")
-            return await response.text()
+            if encode_type == "json":
+                return await response.json()
+            else:
+                return await response.text()
     except NotFoundError as e:
         raise e
     except Exception as e:
         if now_retry < max_retry:
             await asyncio.sleep(now_retry)
-            return await _fetch_url(session, url, max_retry, now_retry + 1)
+            return await _fetch_url(session, url, encode_type, max_retry, now_retry + 1)
         raise e
 
 
 async def fetch_url(
-    session: aiohttp.ClientSession,
+    session: ClientSession,
     url: str,
+    encode_type: str,
     max_retry: int = 3,
-) -> str:
-    return await _fetch_url(session, url, max_retry, 0)
+) -> str | dict:
+    return await _fetch_url(session, url, encode_type, max_retry, 0)
+
+
+async def fetch_as_text(url: str, session: ClientSession = None) -> str:
+    if session:
+        return await fetch_url(session, url, "text")
+    async with ClientSession() as session:
+        return await fetch_url(session, url, "text")
+
+
+async def fetch_as_json(url: str, session: ClientSession = None) -> dict:
+    if session:
+        return await fetch_url(session, url, "json")
+    async with ClientSession() as session:
+        return await fetch_url(session, url, "json")
+
+
+async def fetch_as_html(url: str, session: ClientSession = None) -> BeautifulSoup:
+    return BeautifulSoup(await fetch_as_text(url, session), "html.parser")

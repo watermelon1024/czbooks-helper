@@ -1,23 +1,20 @@
 from typing import Literal
 
 from .const import DICT_SEARCH_BY
-from .czbook import get_code
-from .http import get_html
-from .timestamp import now_timestamp, is_out_of_date
+from .utils import get_code, now_timestamp, is_out_of_date
+from .http import fetch_as_html
 
 
 class SearchResult:
-    def __init__(self, book_title: str, code: str) -> None:
-        self.book_title = book_title
-        self.code = code
+    def __init__(self, novel_title: str, id: str) -> None:
+        self.novel_title = novel_title
+        self.id = id
 
-    def __eq__(self, __value: object) -> bool:
-        if isinstance(__value, SearchResult):
-            return self.code == __value.code
-        return False
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, SearchResult) and other.id == self.id
 
     def __hash__(self) -> int:
-        return hash(self.code)
+        return hash(self.id)
 
 
 async def search(
@@ -27,7 +24,7 @@ async def search(
 ) -> list[SearchResult] | None:
     if not (_by := DICT_SEARCH_BY.get(by)):
         raise ValueError(f'Unknown value "{by}" of by')
-    soup = await get_html(f"https://czbooks.net/{_by}/{keyword}/{page}")
+    soup = await fetch_as_html(f"https://czbooks.net/{_by}/{keyword}/{page}")
 
     if not (
         novel_list_ul := soup.find(
@@ -38,8 +35,8 @@ async def search(
 
     return [
         SearchResult(
-            book_title=novel.find("div", class_="novel-item-title").text.strip(),
-            code=get_code(novel.find("a").get("href")),
+            novel_title=novel.find("div", class_="novel-item-title").text.strip(),
+            id=get_code(novel.find("a").get("href")),
         )
         for novel in novel_list_ul
     ]

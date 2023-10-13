@@ -1,16 +1,10 @@
 import asyncio
-import re
-from typing import TYPE_CHECKING
 
 import aiohttp
-from bs4 import BeautifulSoup
 
-from .const import RE_CHINESE_CHARS
-from .http import fetch_url
-from .timestamp import now_timestamp, time_diff, is_out_of_date
-
-if TYPE_CHECKING:
-    from .czbook import Book
+from .http import fetch_as_html
+from .utils import now_timestamp, time_diff, is_out_of_date
+from .chapter import ChapterList
 
 
 class GetContentState:
@@ -60,11 +54,8 @@ class GetContentState:
 
 
 class GetContent:
-    def __init__(self) -> None:
-        pass
-
     async def get_content(
-        self, book: "Book", state: GetContentState
+        self, chapter_list: ChapterList, state: GetContentState
     ) -> tuple[str, int]:
         """
         Retrun the content and total word count of the book
@@ -73,47 +64,32 @@ class GetContent:
         word_count = 0
         # 逐章爬取內容
         async with aiohttp.ClientSession() as session:
-            for index, ch in enumerate(book.chapter_list, start=1):
+            for index, ch in enumerate(chapter_list, start=1):
                 state.current = index
                 try:
-                    soup = BeautifulSoup(
-                        await fetch_url(session, ch.url), "html.parser"
-                    )
+                    soup = await fetch_as_html(ch.url, session)
                     ch_name = soup.find("div", class_="name")
                     # 尋找內文
                     div_content = ch_name.find_next("div", class_="content")
-                    content += f"\n\n{'='*30} {ch_name.text} {'='*30}\n"
-                    ch_word_count = len(re.findall(RE_CHINESE_CHARS, div_content.text))
-                    if ch_word_count < 1024:
+                    ch.content = div_content.text
+                    content += f"\n\n{'='*30} {ch.content} {'='*30}\n"
+                    if ch.maybe_not_conetent:
                         content += "(本章可能非內文)\n\n"
                     else:
-                        word_count += ch_word_count
+                        word_count += ch.word_count
                         content += "\n"
-                    content += div_content.text
+                    content += ch.content
                 except Exception as e:
                     print(f"Error when getting {ch.url}: {e}")
                     content += f"\n\n{'='*30} 本章擷取失敗 {'='*30}\n\n請至網站閱讀：{ch.url}"
 
-        with open(f"./data/{book.code}.txt", "w", encoding="utf-8") as file:
-            _s = (
-                f"{book.title}\n"
-                f"連結：https://czbooks.net/n/{book.code}\n"
-                f"作者：{book.author.text}\n"
-                f"總章數：{state.total}\n"
-                f"總字數：{word_count}\n"
-                f"{content}"
-            )
-            file.write(_s)
-        book.word_count = word_count
-        book.content_cache = True
-        book._overview_embed_cache = None
         state.finished = True
         return content, word_count
 
     @classmethod
-    def start(cls: "GetContent", book: "Book") -> GetContentState:
-        state = GetContentState(None, None, 0, len(book.chapter_list))
-        task = asyncio.create_task(cls.get_content(cls, book, state))
+    def start(cls: type["GetContent"], chapter_list: ChapterList) -> GetContentState:
+        state = GetContentState(None, None, 0, chapter_list.total_chapter_count)
+        task = asyncio.create_task(cls.get_content(cls, chapter_list, state))
         state.task = task
 
         return state
