@@ -17,3 +17,11 @@ class HashtagList(list[Hashtag]):
         list must be like: ["name1", "name2", ...]
         """
         return cls([Hashtag(name) for name in list_])
+
+    @classmethod
+    def from_json(cls: type["HashtagList"], data: list[dict]) -> "HashtagList":
+        """
+        Load frm json.
+        JSON must be like: [{"text": "name1", "url": "url1"}, ...]
+        """
+        return cls.from_list([datum.get("text") for datum in data])

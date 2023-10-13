@@ -31,7 +31,7 @@ class Thumbnail:
     def from_json(cls: type["Thumbnail"], data: dict) -> "Thumbnail":
         """
         Load from json format.
-        JSON must be like {"url": ..., "theme_color": ...}
+        JSON must be like: {"url": ..., "theme_color": ...}
         """
         thumbnail = cls(data.get("url"))
         thumbnail._theme_color = data.get("theme_color")

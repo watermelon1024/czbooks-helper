@@ -128,16 +128,18 @@ class Novel:
                     if (thumbnail := data.get("thumbnail"))
                     else None
                 ),
-                author=Author(data.get("author")),
+                author=Author(data.get("author").get("text")),
                 state=data.get("state"),
                 last_update=data.get("last_update"),
                 views=data.get("views"),
                 category=Category(*data.get("category").values()),
-                hashtags=HashtagList.from_list(data.get("hashtags", [])),
+                hashtags=HashtagList.from_list(
+                    [datum.get("text") for datum in data.get("hashtags", [])]
+                ),
             ),
             content_cache=data.get("content_cache"),
             word_count=data.get("words_count"),
-            chapter_list=ChapterList(),
+            chapter_list=ChapterList.from_json(data.get("chapter_list")),
             comment=CommentList(id),
             last_fetch_time=data.get("last_fetch_time", 0),
         )

@@ -47,3 +47,16 @@ class ChapterList(list[ChapterInfo]):
     @property
     def maybe_content_count(self) -> int:
         return self._maybe_content_count or self.total_chapter_count
+
+    @classmethod
+    def from_json(cls: type["ChapterList"], data: list[dict]) -> "ChapterList":
+        """
+        Load from json format.
+        JSON must be like: [{"text": "name1", "url": "url1"}, ...]
+        """
+        return cls(
+            [
+                ChapterInfo(name=datum.get("name"), url=datum.get("url"))
+                for datum in data
+            ]
+        )
