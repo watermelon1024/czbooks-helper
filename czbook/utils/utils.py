@@ -16,8 +16,8 @@ def hyper_link_list_to_str(
     )
     text = ""
     for hyper_link in hyper_links[:-8]:
-        text_len += len(text_ := f"{hyper_link}{comma}")
-        if text_len > max_len:
+        text_len += len(text_ := f"{str(hyper_link)}{comma}")
+        if text_len >= max_len:
             text += f"{ellipsis}{comma}"
             break
         text += text_
