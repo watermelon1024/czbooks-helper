@@ -42,7 +42,7 @@ class DataBase(db.DataBase):
             last_update=novel.last_update,
             views=novel.views,
             category=category,
-            hashtags_str=hashtag_list_to_str(novel.hashtags),
+            hashtags=hashtag_list_to_str(novel.hashtags),
             chapter_list=chapter_list_to_str(novel.chapter_list),
             word_count=novel.word_count,
         ).on_conflict("replace").execute()
@@ -119,8 +119,6 @@ class Bot(discord.Bot):
         """
         Closes the bot.
         """
-        print("Saving file...")
-        self.save_cache_to_file()
         print("Closing the bot...")
         await super().close()
         print("Bot is offline.")
