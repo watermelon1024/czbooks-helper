@@ -43,7 +43,9 @@ class NovelModule(BaseModel):
     last_update = CharField(null=False)
     views = IntegerField(null=False, default=0)
     category = ForeignKeyField(CategoryModule, backref="NovelModule")
-    hashtags_str = TextField(null=False)
+    hashtags = TextField(null=False)
+    chapter_list = TextField(null=False)
+    word_count = IntegerField(null=True)
 
 
 class NovelType(TypedDict):
@@ -52,10 +54,12 @@ class NovelType(TypedDict):
     novel_id: str
     titel: str
     description: str
-    thumbnail: dict
+    thumbnail: dict | None
     author: str
     state: str
     last_update: str
     views: int
-    category: CategoryModule
-    hashtags_str: str
+    category: CategoryType
+    hashtags: str
+    chapter_list: str
+    word_count: int | None
