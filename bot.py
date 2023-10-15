@@ -19,11 +19,9 @@ from utils.czbook import (
 
 load_dotenv()
 
-novel_cache: dict[str, Novel] = {}
-
 
 class DataBase(db.DataBase):
-    cache = novel_cache
+    cache: dict[str, Novel] = {}
 
     # czbook function #
     def add_or_update_cache(self, novel: Novel) -> None:
@@ -107,9 +105,8 @@ class DataBase(db.DataBase):
 class Bot(discord.Bot):
     def __init__(self, description=None, *args, **options):
         super().__init__(description, *args, **options)
-        self.novel_cache: dict[str, Novel] = novel_cache
-        self._last_save_cache_time = 0
         self.get_content_msg: set = set()
+        self.db = DataBase()
 
     # bot event
     async def on_ready(self) -> None:
