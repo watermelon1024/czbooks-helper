@@ -128,7 +128,7 @@ def _comment_embed(novel: Novel) -> Embed:
 
 
 def hashtag_list_to_str(hashtags: czbook.HashtagList) -> str:
-    return json.dumps([item.text for item in hashtags])
+    return json.dumps([item.text for item in hashtags], ensure_ascii=False)
 
 
 def hashtag_str_to_list(s: str) -> czbook.HashtagList:
@@ -136,7 +136,7 @@ def hashtag_str_to_list(s: str) -> czbook.HashtagList:
 
 
 def chapter_list_to_str(chapter_list: czbook.ChapterList) -> str:
-    return json.dumps([item.to_dict() for item in chapter_list])
+    return json.dumps([item.to_dict() for item in chapter_list], ensure_ascii=False)
 
 
 def chapter_str_to_list(s: str) -> czbook.ChapterList:
