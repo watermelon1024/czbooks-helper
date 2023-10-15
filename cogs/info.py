@@ -30,7 +30,7 @@ class InfoCog(BaseCog):
         await ctx.defer()
         code = czbook.utils.get_code(link) or link
         try:
-            novel = await self.bot.get_or_fetch_novel(code)
+            novel = await self.bot.db.get_or_fetch_novel(code)
             await ctx.respond(
                 embed=novel.overview_embed(),
                 view=InfoView(self.bot),
@@ -106,7 +106,7 @@ class InfoView(View):
             interaction.message.components[-1].children[0].disabled
         )
         await interaction.response.defer()
-        novel = await self.bot.get_or_fetch_novel(
+        novel = await self.bot.db.get_or_fetch_novel(
             czbook.utils.get_code(interaction.message.embeds[0].url)
         )
         await interaction.message.edit(embed=novel.overview_embed(), view=self)
@@ -119,7 +119,7 @@ class InfoView(View):
             interaction.message.components[-1].children[0].disabled
         )
         await interaction.response.defer()
-        novel = await self.bot.get_or_fetch_novel(
+        novel = await self.bot.db.get_or_fetch_novel(
             czbook.utils.get_code(interaction.message.embeds[0].url)
         )
         await interaction.message.edit(embed=novel.chapter_embed(), view=self)
@@ -132,7 +132,7 @@ class InfoView(View):
             interaction.message.components[-1].children[0].disabled
         )
         await interaction.response.defer()
-        novel = await self.bot.get_or_fetch_novel(
+        novel = await self.bot.db.get_or_fetch_novel(
             czbook.utils.get_code(interaction.message.embeds[0].url)
         )
         await interaction.message.edit(embed=await novel.comment_embed(), view=self)
@@ -144,7 +144,7 @@ class InfoView(View):
         self.get_content_button.disabled = True
         await interaction.message.edit(view=self)
 
-        novel = await self.bot.get_or_fetch_novel(
+        novel = await self.bot.db.get_or_fetch_novel(
             czbook.utils.get_code(interaction.message.embeds[0].url)
         )
         if novel.content_cache:
@@ -182,7 +182,7 @@ class InfoView(View):
                 ),
                 view=None if stats.eta < 2 else MISSING,
             )
-        self.bot.save_cache_to_file()
+        self.bot.db.add_or_update_cache(novel)
         await msg.edit(
             content=f"- 書名: {novel.title}\n- 總字數: `{novel.word_count}`字",
             file=discord.File(Path(f"./data/{novel.id}.txt")),
@@ -192,7 +192,7 @@ class InfoView(View):
 
     async def cancel_get_content(self, interaction: Interaction):
         message = await get_or_fetch_message_from_reference(interaction.message)
-        novel = await self.bot.get_or_fetch_novel(
+        novel = await self.bot.db.get_or_fetch_novel(
             czbook.utils.get_code(message.embeds[0].url)
         )
         if novel.content_cache:

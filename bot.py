@@ -1,5 +1,4 @@
 import os
-import json
 from typing import Any
 
 import discord
@@ -9,34 +8,105 @@ from dotenv import load_dotenv
 import czbook
 from czbook.utils import is_out_of_date
 
-from utils.czbook import Novel
+import db
+from utils.czbook import (
+    Novel,
+    hashtag_list_to_str,
+    hashtag_str_to_list,
+    chapter_list_to_str,
+    chapter_str_to_list,
+)
 
 load_dotenv()
 
-NOVEL_CACHE_FILE = "./data/novel.json"
-novel_cache: dict[str, Novel] = {}
 
-try:
-    with open(NOVEL_CACHE_FILE, "r", encoding="utf-8") as file:
-        data: dict[str, dict] = json.load(file)
-        novel_cache = {id: Novel.load_from_json(detail) for id, detail in data.items()}
-except Exception as e:
-    print(f"error load db file, using empty cache.\n{e}")
-    novel_cache = {}
+class DataBase(db.DataBase):
+    cache: dict[str, Novel] = {}
 
+    # czbook function #
+    def add_or_update_cache(self, novel: Novel) -> None:
+        # cache
+        self.cache[novel.id] = novel
 
-def novel_serializer(obj):
-    if isinstance(obj, Novel):
-        return obj.to_dict()
-    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+        # database
+        category, _ = self.CategoryModule.get_or_create(
+            name=novel.category.name, url=novel.category.url
+        )
+        self.NovelModule.insert(
+            novel_id=novel.id,
+            titel=novel.title,
+            description=novel.description,
+            thumbnail=novel.thumbnail.to_dict() if novel.thumbnail else None,
+            author=novel.author.name,
+            state=novel.state,
+            last_update=novel.last_update,
+            views=novel.views,
+            category=category,
+            hashtags=hashtag_list_to_str(novel.hashtags),
+            chapter_list=chapter_list_to_str(novel.chapter_list),
+            word_count=novel.word_count,
+        ).on_conflict("replace").execute()
+
+    def get_cache(self, id: str) -> Novel | None:
+        if novel := self.cache.get(id):
+            return novel
+        if data := self.NovelModule.get_or_none(self.NovelModule.novel_id == id):
+            return self._db_data_to_novel_class(data)
+
+        return None
+
+    async def fetch_novel(self, id: str, first: bool = True) -> Novel:
+        return Novel.from_original_novel(await czbook.fetch_novel(id, first))
+
+    async def get_or_fetch_novel(
+        self, id: str, update_when_out_of_date: bool = True
+    ) -> Novel:
+        if novel := self.get_cache(id):
+            if update_when_out_of_date and (
+                now := is_out_of_date(novel.last_fetch_time, 3600)
+            ):
+                novel.last_fetch_time = now
+                updated_novel = await self.fetch_novel(novel.id, False)
+                updated_novel.info.thumbnail = novel.info.thumbnail
+                updated_novel.word_count = novel.word_count
+                updated_novel.content_cache = novel.content_cache
+                self.add_or_update_cache(updated_novel)
+                return updated_novel
+            return novel
+        self.add_or_update_cache(novel := await self.fetch_novel(id))
+        return novel
+
+    def _db_data_to_novel_class(self, data: db.NovelType) -> Novel:
+        return Novel(
+            id=data.novel_id,
+            info=czbook.NovelInfo(
+                id=data.novel_id,
+                title=data.titel,
+                description=data.description,
+                thumbnail=(
+                    czbook.Thumbnail.from_json(data.thumbnail)
+                    if data.thumbnail
+                    else None
+                ),
+                author=czbook.Author(data.author),
+                state=data.state,
+                last_update=data.last_update,
+                views=data.views,
+                category=czbook.Category(data.category.name, data.category.url),
+                hashtags=hashtag_str_to_list(data.hashtags),
+            ),
+            content_cache=bool(data.word_count),
+            word_count=data.word_count or 0,
+            chapter_list=chapter_str_to_list(data.chapter_list),
+            comment=czbook.CommentList(data.novel_id),
+        )
 
 
 class Bot(discord.Bot):
     def __init__(self, description=None, *args, **options):
         super().__init__(description, *args, **options)
-        self.novel_cache: dict[str, Novel] = novel_cache
-        self._last_save_cache_time = 0
         self.get_content_msg: set = set()
+        self.db = DataBase()
 
     # bot event
     async def on_ready(self) -> None:
@@ -49,8 +119,6 @@ class Bot(discord.Bot):
         """
         Closes the bot.
         """
-        print("Saving file...")
-        self.save_cache_to_file()
         print("Closing the bot...")
         await super().close()
         print("Bot is offline.")
@@ -61,43 +129,6 @@ class Bot(discord.Bot):
         """
         print("Starting the bot...")
         super().run(token)
-
-    # czbook function #
-    def add_cache(self, novel: Novel) -> None:
-        self.novel_cache[novel.id] = novel
-        if now := is_out_of_date(self._last_save_cache_time, 60):
-            self._last_save_cache_time = now
-            self.save_cache_to_file()
-
-    def get_cache(self, id: str) -> Novel | None:
-        return self.novel_cache.get(id)
-
-    async def fetch_novel(self, id: str, first: bool = True) -> Novel:
-        return Novel.from_original_novel(await czbook.fetch_novel(id, first))
-
-    async def get_or_fetch_novel(
-        self, id: str, update_when_out_of_date: bool = True
-    ) -> Novel:
-        if novel := self.get_cache(id):
-            if update_when_out_of_date and (
-                now := is_out_of_date(novel.last_fetch_time, 600)
-            ):
-                novel.last_fetch_time = now
-                updated_novel = await self.fetch_novel(novel.id, False)
-                updated_novel.info.thumbnail = novel.info.thumbnail
-                updated_novel.word_count = novel.word_count
-                updated_novel.content_cache = novel.content_cache
-                self.add_cache(updated_novel)
-                return updated_novel
-            return novel
-        self.add_cache(novel := await self.fetch_novel(id))
-        return novel
-
-    def save_cache_to_file(self) -> None:
-        with open(NOVEL_CACHE_FILE, "w", encoding="utf-8") as file:
-            json.dump(
-                self.novel_cache, file, default=novel_serializer, ensure_ascii=False
-            )
 
 
 class BaseCog(discord.Cog):

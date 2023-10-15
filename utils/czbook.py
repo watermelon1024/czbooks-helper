@@ -1,4 +1,5 @@
 import random
+import json
 
 from discord import Embed, Colour
 
@@ -124,3 +125,19 @@ def _comment_embed(novel: Novel) -> Embed:
             break
 
     return embed
+
+
+def hashtag_list_to_str(hashtags: czbook.HashtagList) -> str:
+    return json.dumps([item.text for item in hashtags], ensure_ascii=False)
+
+
+def hashtag_str_to_list(s: str) -> czbook.HashtagList:
+    return czbook.HashtagList([czbook.Hashtag(item) for item in json.loads(s)])
+
+
+def chapter_list_to_str(chapter_list: czbook.ChapterList) -> str:
+    return json.dumps([item.to_dict() for item in chapter_list], ensure_ascii=False)
+
+
+def chapter_str_to_list(s: str) -> czbook.ChapterList:
+    return czbook.ChapterList.from_json(json.loads(s))

@@ -155,7 +155,7 @@ class SearchView(View):
         print(f"{interaction.user} used /info link: {code}")
         await interaction.response.defer()
 
-        novel = await self.bot.get_or_fetch_novel(code)
+        novel = await self.bot.db.get_or_fetch_novel(code)
         await interaction.followup.send(
             embed=novel.overview_embed(),
             view=InfoView(self.bot),

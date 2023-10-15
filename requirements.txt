@@ -3,5 +3,6 @@ beautifulsoup4
 python-dotenv
 py-cord >= 2.0.0
 Pillow
+peewee
 numpy
 scikit-learn
