@@ -56,35 +56,22 @@ class GetContentState:
 class GetContent:
     async def get_content(
         self, chapter_list: ChapterList, state: GetContentState
-    ) -> tuple[str, int]:
+    ) -> None:
         """
-        Retrun the content and total word count of the book
+        Get the content of the novel.
         """
-        content = ""
-        word_count = 0
-        # 逐章爬取內容
         async with aiohttp.ClientSession() as session:
-            for index, ch in enumerate(chapter_list, start=1):
+            for index, chapter in enumerate(chapter_list, start=1):
                 state.current = index
                 try:
-                    soup = await fetch_as_html(ch.url, session)
-                    ch_name = soup.find("div", class_="name")
-                    # 尋找內文
-                    div_content = ch_name.find_next("div", class_="content")
-                    ch.content = div_content.text
-                    content += f"\n\n{'='*30} {ch.content} {'='*30}\n"
-                    if ch.maybe_not_conetent:
-                        content += "(本章可能非內文)\n\n"
-                    else:
-                        word_count += ch.word_count
-                        content += "\n"
-                    content += ch.content
+                    soup = await fetch_as_html(chapter.url, session)
+                    chapter.content = soup.find("div", class_="content").text
                 except Exception as e:
-                    print(f"Error when getting {ch.url}: {e}")
-                    content += f"\n\n{'='*30} 本章擷取失敗 {'='*30}\n\n請至網站閱讀：{ch.url}"
+                    print(f"Error when getting {chapter.url}: {e}")
+                    chapter._error = str(e)
 
         state.finished = True
-        return content, word_count
+        return None
 
     @classmethod
     def start(cls: type["GetContent"], chapter_list: ChapterList) -> GetContentState:
