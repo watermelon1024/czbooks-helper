@@ -10,7 +10,7 @@ from .chapter import ChapterList
 class GetContentState:
     def __init__(
         self,
-        task: asyncio.Task[tuple[str, int]] = None,
+        task: asyncio.Task = None,
         start_time: float = None,
         current: int = None,
         total: int = None,
