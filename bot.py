@@ -62,17 +62,9 @@ class DataBase(db.DataBase):
         self, id: str, update_when_out_of_date: bool = True
     ) -> Novel:
         if novel := self.get_cache(id):
-            if update_when_out_of_date and (
-                now := is_out_of_date(novel.last_fetch_time, 3600)
-            ):
-                novel.last_fetch_time = now
-                updated_novel = await self.fetch_novel(novel.id, False)
-                if updated_novel.last_update == novel.last_update:
-                    return novel
-                if updated_novel.thumbnail:
-                    await updated_novel.thumbnail.get_theme_colors()
-                self.add_or_update_cache(updated_novel)
-                return updated_novel
+            if update_when_out_of_date and is_out_of_date(novel.last_fetch_time, 3600):
+                await novel.update()
+                self.add_or_update_cache(novel)
             return novel
         self.add_or_update_cache(novel := await self.fetch_novel(id))
         return novel
