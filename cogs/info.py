@@ -168,7 +168,7 @@ class InfoView(View):
             await asyncio.sleep(1)
             if stats.finished:
                 break
-            elif msg.id not in self.bot.get_content_msg:
+            if msg.id not in self.bot.get_content_msg:
                 return
             await msg.edit(
                 embed=Embed(

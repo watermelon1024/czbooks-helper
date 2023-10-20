@@ -30,7 +30,7 @@ class Novel(czbook.Novel):
                 f"- 狀　態：{self.state} ({self.last_update}更新)\n"
                 f"- 總字數：{f'`{self.word_count}`字' if self.word_count else '`點擊取得內文以取得字數`'}\n"
                 f"- 觀看數：`{self.views}`次\n"
-                f"- 章節數：`{len(self.chapter_list)}`章\n"
+                f"- 章節數：`{self.chapter_list.maybe_content_count}`章\n"
                 f"- 分　類：{self.category}"
             ),
             url=f"https://czbooks.net/n/{self.id}",
