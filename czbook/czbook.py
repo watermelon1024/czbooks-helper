@@ -21,7 +21,6 @@ class Novel:
         self.info = info
         self.chapter_list = chapter_list
         self.comment = comment or CommentList(id)
-        self.content_cache: bool = True if word_count else False
         self._word_count = word_count
         self.last_fetch_time = last_fetch_time
 
