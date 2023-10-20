@@ -34,6 +34,9 @@ class ChapterInfo:
             "error": self._error,
         }
 
+    def __str__(self) -> str:
+        return f"[{self.name}]({self.url})"
+
     @classmethod
     def from_json(cls: type["ChapterInfo"], data: dict) -> "ChapterInfo":
         chaper = cls(
@@ -42,10 +45,7 @@ class ChapterInfo:
             content=data.get("content"),
         )
         chaper._error = data.get("error")
-        return cls
-
-    def __str__(self) -> str:
-        return f"[{self.name}]({self.url})"
+        return chaper
 
 
 class ChapterList(list[ChapterInfo]):
