@@ -83,7 +83,7 @@ class Novel:
             f"總章數：{self.chapter_list.total_chapter_count}\n"
             f"總字數：{self.word_count}\n"
         )
-        content = "\n\n".join(
+        content = "\n\n\n".join(
             f"{'-'*30} {chapter.name} {'-'*30}\n"
             + (
                 f"本章擷取失敗，請至網站閱讀：{chapter.url}"
@@ -95,7 +95,7 @@ class Novel:
             )
             for chapter in self.chapter_list
         )
-        return info + content
+        return info + "\n\n" + content
 
     async def update_comments(self) -> None:
         await self.comment.update()

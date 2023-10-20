@@ -1,5 +1,4 @@
 import asyncio
-from pathlib import Path
 
 import discord
 
@@ -142,19 +141,19 @@ class InfoView(View):
             interaction.message.components[-1].children[0].disabled
         )
         self.get_content_button.disabled = True
-        await interaction.message.edit(view=self)
-
+        await interaction.response.edit_message(view=self)
         novel = await self.bot.db.get_or_fetch_novel(
             czbook.utils.get_code(interaction.message.embeds[0].url)
         )
+
         if novel.content_cache:
-            return await interaction.response.send_message(
+            return await interaction.followup.send(
                 content=f"- 書名: {novel.title}\n- 總字數: `{novel.word_count}`字",
-                file=discord.File(Path(f"./data/{novel.id}.txt")),
+                file=discord.File(novel.filelike_content, filename=f"{novel.id}.txt"),
             )
 
         print(f"{interaction.user} gets {novel.title}'s content")
-        content_msg = await interaction.response.send_message(
+        msg = await interaction.message.reply(
             embed=Embed(
                 title="擷取內文中...",
                 description="正在計算進度...",
@@ -162,7 +161,6 @@ class InfoView(View):
             view=self.cancel_get_content_view,
         )
         stats = novel.get_content()
-        msg = await content_msg.original_response()
         self.bot.get_content_msg.add(msg.id)
         while True:
             await asyncio.sleep(1)
@@ -185,7 +183,7 @@ class InfoView(View):
         self.bot.db.add_or_update_cache(novel)
         await msg.edit(
             content=f"- 書名: {novel.title}\n- 總字數: `{novel.word_count}`字",
-            file=discord.File(Path(f"./data/{novel.id}.txt")),
+            file=discord.File(novel.filelike_content, filename=f"{novel.id}.txt"),
             embed=None,
             view=None,
         )

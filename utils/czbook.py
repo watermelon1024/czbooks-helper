@@ -1,3 +1,4 @@
+import io
 import random
 import json
 
@@ -90,6 +91,10 @@ class Novel(czbook.Novel):
     async def _get_content(self) -> None:
         await super()._get_content()
         self._overview_embed_cache = None
+
+    @property
+    def filelike_content(self) -> io.StringIO:
+        return io.StringIO(self.content)
 
     @classmethod
     def load_from_json(cls: type["Novel"], data: dict) -> "Novel":
