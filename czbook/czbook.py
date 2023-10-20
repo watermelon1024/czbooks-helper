@@ -117,6 +117,18 @@ class Novel:
         self._get_content_state.task.cancel()
         self._get_content_state = None
 
+    async def update(self) -> bool:
+        """
+        Return True if updated.
+        """
+        updated_novel = await fetch_novel(self.id, False)
+        if updated_novel.last_update != self.last_update:
+            self = updated_novel
+            await self.thumbnail.get_theme_colors()
+            return True
+        self.last_fetch_time = now_timestamp()
+        return False
+
     def to_dict(self) -> dict:
         return {
             "code": self.id,
