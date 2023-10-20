@@ -100,10 +100,9 @@ class Novel(czbook.Novel):
         return cls(
             id=original.id,
             info=original.info,
-            content_cache=original.content_cache,
-            word_count=original.word_count,
             chapter_list=original.chapter_list,
             comment=original.comment,
+            word_count=original.word_count,
             last_fetch_time=original.last_fetch_time,
         )
 

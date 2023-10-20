@@ -68,6 +68,6 @@ class ChapterList(list[ChapterInfo]):
     def from_json(cls: type["ChapterList"], data: list[dict]) -> "ChapterList":
         """
         Load from json format.
-        JSON must be like: [{"text": "name1", "url": "url1"}, ...]
+        JSON must be like: [{"text": "name1", "url": "url1", "content": "content1"}, ...]
         """
         return cls([ChapterInfo.from_json(datum) for datum in data])
