@@ -67,9 +67,10 @@ class DataBase(db.DataBase):
             ):
                 novel.last_fetch_time = now
                 updated_novel = await self.fetch_novel(novel.id, False)
-                updated_novel.info.thumbnail = novel.info.thumbnail
-                updated_novel.word_count = novel.word_count
-                updated_novel.content_cache = novel.content_cache
+                if updated_novel.last_update == novel.last_update:
+                    return novel
+                if updated_novel.thumbnail:
+                    await updated_novel.thumbnail.get_theme_colors()
                 self.add_or_update_cache(updated_novel)
                 return updated_novel
             return novel
@@ -95,10 +96,9 @@ class DataBase(db.DataBase):
                 category=czbook.Category(data.category.name, data.category.url),
                 hashtags=hashtag_str_to_list(data.hashtags),
             ),
-            content_cache=bool(data.word_count),
-            word_count=data.word_count or 0,
             chapter_list=chapter_str_to_list(data.chapter_list),
             comment=czbook.CommentList(data.novel_id),
+            word_count=data.word_count,
         )
 
 
