@@ -22,6 +22,7 @@ class Novel:
         self.chapter_list = chapter_list
         self.comment = comment or CommentList(id)
         self._word_count = word_count
+        self._content_cache: bool = bool(word_count)
         self.last_fetch_time = last_fetch_time
 
         self._comment_last_update: float = 0
@@ -65,13 +66,13 @@ class Novel:
 
     @property
     def word_count(self) -> int:
-        if not self._word_count:
+        if (not self._word_count) and self._content_cache:
             self._word_count = sum(chapter.word_count for chapter in self.chapter_list)
         return self._word_count
 
     @property
     def content_cache(self) -> bool:
-        return bool(self._word_count)
+        return self._content_cache
 
     @property
     def content(self) -> str:
@@ -101,7 +102,7 @@ class Novel:
 
     async def _get_content(self) -> None:
         await self._get_content_state.task
-        self.content_cache = True
+        self._content_cache = True
 
     def get_content(self) -> GetContentState:
         if not self._get_content_state:
