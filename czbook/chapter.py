@@ -8,6 +8,7 @@ class ChapterInfo:
         self.name = name
         self.url = url
         self.content = content
+        self._error: str = None
         self._word_count: int = None
         self._maybe_not_content: bool = None
 
@@ -26,10 +27,25 @@ class ChapterInfo:
         return self._maybe_not_content
 
     def to_dict(self) -> dict:
-        return {"name": self.name, "url": self.url}
+        return {
+            "name": self.name,
+            "url": self.url,
+            "content": self.content,
+            "error": self._error,
+        }
 
     def __str__(self) -> str:
         return f"[{self.name}]({self.url})"
+
+    @classmethod
+    def from_json(cls: type["ChapterInfo"], data: dict) -> "ChapterInfo":
+        chaper = cls(
+            name=data.get("name"),
+            url=data.get("url"),
+            content=data.get("content"),
+        )
+        chaper._error = data.get("error")
+        return chaper
 
 
 class ChapterList(list[ChapterInfo]):
@@ -52,11 +68,6 @@ class ChapterList(list[ChapterInfo]):
     def from_json(cls: type["ChapterList"], data: list[dict]) -> "ChapterList":
         """
         Load from json format.
-        JSON must be like: [{"text": "name1", "url": "url1"}, ...]
+        JSON must be like: [{"text": "name1", "url": "url1", "content": "content1"}, ...]
         """
-        return cls(
-            [
-                ChapterInfo(name=datum.get("name"), url=datum.get("url"))
-                for datum in data
-            ]
-        )
+        return cls([ChapterInfo.from_json(datum) for datum in data])

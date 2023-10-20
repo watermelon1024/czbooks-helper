@@ -12,18 +12,17 @@ class Novel:
         self,
         id: str,
         info: NovelInfo,
-        content_cache: bool,
-        word_count: int,
         chapter_list: ChapterList,
-        comment: CommentList,
+        comment: CommentList = None,
+        word_count: int = None,
         last_fetch_time: float = 0,
     ) -> None:
         self.id = id
         self.info = info
-        self.content_cache = content_cache
-        self.word_count = word_count
         self.chapter_list = chapter_list
-        self.comment = comment
+        self.comment = comment or CommentList(id)
+        self._word_count = word_count
+        self._content_cache: bool = bool(word_count)
         self.last_fetch_time = last_fetch_time
 
         self._comment_last_update: float = 0
@@ -65,23 +64,45 @@ class Novel:
     def hashtags(self):
         return self.info.hashtags
 
+    @property
+    def word_count(self) -> int:
+        if (not self._word_count) and self._content_cache:
+            self._word_count = sum(chapter.word_count for chapter in self.chapter_list)
+        return self._word_count
+
+    @property
+    def content_cache(self) -> bool:
+        return self._content_cache
+
+    @property
+    def content(self) -> str:
+        info = (
+            f"{self.title} —— {self.author.name}\n"
+            f"連結：https://czbooks.net/n/{self.id}\n"
+            f"作者：{self.author.name}\n"
+            f"總章數：{self.chapter_list.total_chapter_count}\n"
+            f"總字數：{self.word_count}\n"
+        )
+        content = "\n\n\n".join(
+            f"{'-'*30} {chapter.name} {'-'*30}\n"
+            + (
+                f"本章擷取失敗，請至網站閱讀：{chapter.url}"
+                if chapter._error
+                else (
+                    ("(本章可能非內文)\n\n" if chapter.maybe_not_conetent else "\n")
+                    + chapter.content
+                )
+            )
+            for chapter in self.chapter_list
+        )
+        return info + "\n\n" + content
+
     async def update_comments(self) -> None:
         await self.comment.update()
 
     async def _get_content(self) -> None:
-        content, word_count = await self._get_content_state.task
-        with open(f"./data/{self.id}.txt", "w", encoding="utf-8") as file:
-            _s = (
-                f"{self.title} —— {self.author.name}\n"
-                f"連結：https://czbooks.net/n/{self.id}\n"
-                f"作者：{self.author.name}\n"
-                f"總章數：{self.chapter_list.total_chapter_count}\n"
-                f"總字數：{word_count}\n"
-                f"{content}"
-            )
-            file.write(_s)
-        self.word_count = word_count
-        self.content_cache = True
+        await self._get_content_state.task
+        self._content_cache = True
 
     def get_content(self) -> GetContentState:
         if not self._get_content_state:
@@ -107,11 +128,10 @@ class Novel:
             "last_update": self.last_update,
             "views": self.views,
             "category": self.category.to_dict(),
-            "content_cache": self.content_cache,
-            "words_count": self.word_count,
             "hashtags": [hashtag.to_dict() for hashtag in self.hashtags],
             "chapter_list": [chapter.to_dict() for chapter in self.chapter_list],
             # "comments": [comment.to_dict() for comment in self.comments],
+            "word_count": self.word_count,
             "last_fetch_time": self.last_fetch_time,
         }
 
@@ -137,10 +157,9 @@ class Novel:
                     [datum.get("text") for datum in data.get("hashtags", [])]
                 ),
             ),
-            content_cache=data.get("content_cache"),
-            word_count=data.get("words_count"),
             chapter_list=ChapterList.from_json(data.get("chapter_list")),
-            comment=CommentList(id),
+            # comment=CommentList(id),
+            word_count=data.get("word_count"),
             last_fetch_time=data.get("last_fetch_time", 0),
         )
 
@@ -184,9 +203,6 @@ async def fetch_novel(id: str, first: bool = True) -> Novel:
     return Novel(
         id=id,
         info=info,
-        content_cache=False,
-        word_count=0,
         chapter_list=chapter_list,
-        comment=CommentList(id),
         last_fetch_time=now_timestamp(),
     )
