@@ -21,7 +21,7 @@ class Novel:
         self.id = id
         self.info = info
         self.content_cache = content_cache
-        self.word_count = word_count
+        self._word_count = word_count
         self.chapter_list = chapter_list
         self.comment = comment
         self.last_fetch_time = last_fetch_time
@@ -65,22 +65,40 @@ class Novel:
     def hashtags(self):
         return self.info.hashtags
 
+    @property
+    def word_count(self) -> int:
+        if not self._word_count:
+            self._word_count = sum(chapter.word_count for chapter in self.chapter_list)
+        return self._word_count
+
+    @property
+    def content(self) -> str:
+        info = (
+            f"{self.title} —— {self.author.name}\n"
+            f"連結：https://czbooks.net/n/{self.id}\n"
+            f"作者：{self.author.name}\n"
+            f"總章數：{self.chapter_list.total_chapter_count}\n"
+            f"總字數：{self.word_count}\n"
+        )
+        content = "\n\n".join(
+            f"{'-'*30} {chapter.name} {'-'*30}\n"
+            + (
+                f"本章擷取失敗，請至網站閱讀：{chapter.url}"
+                if chapter._error
+                else (
+                    ("(本章可能非內文)\n\n" if chapter.maybe_not_conetent else "\n")
+                    + chapter.content
+                )
+            )
+            for chapter in self.chapter_list
+        )
+        return info + content
+
     async def update_comments(self) -> None:
         await self.comment.update()
 
     async def _get_content(self) -> None:
-        content, word_count = await self._get_content_state.task
-        with open(f"./data/{self.id}.txt", "w", encoding="utf-8") as file:
-            _s = (
-                f"{self.title} —— {self.author.name}\n"
-                f"連結：https://czbooks.net/n/{self.id}\n"
-                f"作者：{self.author.name}\n"
-                f"總章數：{self.chapter_list.total_chapter_count}\n"
-                f"總字數：{word_count}\n"
-                f"{content}"
-            )
-            file.write(_s)
-        self.word_count = word_count
+        await self._get_content_state.task
         self.content_cache = True
 
     def get_content(self) -> GetContentState:
