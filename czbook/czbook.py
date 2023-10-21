@@ -2,7 +2,7 @@ import asyncio
 from .novel_info import NovelInfo, Author, Category, HashtagList, Thumbnail
 from .chapter import ChapterList, ChapterInfo
 from .comment import CommentList
-from .get_content import GetContent, GetContentState
+from .content import GetContent, GetContentState
 from .http import fetch_as_html
 from .utils import now_timestamp
 

@@ -80,3 +80,9 @@ class GetContent:
         state.task = task
 
         return state
+    
+
+class ContentSearchResult:
+    ...
+
+async def search_content(chapter_list: ChapterList, key_word) -> list[ContentSearchResult]:
