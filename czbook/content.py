@@ -91,7 +91,9 @@ class ContentSearchResult:
         self.position = position
 
 
-def _search_content(text: str, keyword: str, context_length: int = 20) -> list[str]:
+def _search_content(
+    text: str, keyword: str, highlight: str = None, context_length: int = 20
+) -> list[str]:
     keyword_length = len(keyword)
     keyword_position = 0
     context_positions: list[tuple[int, int]] = []
@@ -104,12 +106,20 @@ def _search_content(text: str, keyword: str, context_length: int = 20) -> list[s
             context_positions[-1] = (context_positions[-1][0], end_position)
         else:
             context_positions.append((start_position, end_position))
+    if highlight:
+        return [
+            text[start:end].replace(keyword, highlight % keyword)
+            for (start, end) in context_positions
+        ]
 
     return [text[start:end] for (start, end) in context_positions]
 
 
 def search_content(
-    chapter_list: ChapterList, keyword: str
+    chapter_list: ChapterList,
+    keyword: str,
+    highlight: str = None,
+    context_length: int = 20,
 ) -> list[ContentSearchResult]:
     """
     Return: `list[ContentSearchResult]`
@@ -124,7 +134,9 @@ def search_content(
             raise RuntimeError(f"Chapter '{chapter.name}' hasn't had content")
         results.extend(
             ContentSearchResult(chapter=chapter, context=result)
-            for result in _search_content(chapter.content, keyword)
+            for result in _search_content(
+                chapter.content, keyword, highlight, context_length
+            )
         )
 
     return results
