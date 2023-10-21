@@ -4,7 +4,7 @@ import aiohttp
 
 from .http import fetch_as_html
 from .utils import now_timestamp, time_diff, is_out_of_date
-from .chapter import ChapterList
+from .chapter import ChapterInfo, ChapterList
 
 
 class GetContentState:
@@ -83,10 +83,48 @@ class GetContent:
 
 
 class ContentSearchResult:
-    ...
+    def __init__(
+        self, chapter: ChapterInfo, context: str, position: int = None
+    ) -> None:
+        self.chapter = chapter
+        self.context = context
+        self.position = position
 
 
-async def search_content(
-    chapter_list: ChapterList, key_word
+def _search_content(text: str, keyword: str, context_length: int = 20) -> list[str]:
+    keyword_length = len(keyword)
+    keyword_position = 0
+    context_positions: list[tuple[int, int]] = []
+
+    while (keyword_position := text.find(keyword, keyword_position + 1)) != -1:
+        start_position = max(0, keyword_position - context_length)
+        end_position = keyword_position + keyword_length + context_length
+
+        if context_positions and start_position <= context_positions[-1][1]:
+            context_positions[-1] = (context_positions[-1][0], end_position)
+        else:
+            context_positions.append((start_position, end_position))
+
+    return [text[start:end] for (start, end) in context_positions]
+
+
+def search_content(
+    chapter_list: ChapterList, keyword: str
 ) -> list[ContentSearchResult]:
-    ...
+    """
+    Return: `list[ContentSearchResult]`
+        the search results in content with the keyword.
+
+    Raise:
+        if chapter hasn't had content.
+    """
+    results = []
+    for chapter in chapter_list:
+        if not chapter.content:
+            raise RuntimeError(f"Chapter '{chapter.name}' hasn't had content")
+        results.extend(
+            ContentSearchResult(chapter=chapter, context=result)
+            for result in _search_content(chapter.content, keyword)
+        )
+
+    return results
