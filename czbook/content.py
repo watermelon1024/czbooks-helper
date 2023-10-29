@@ -158,7 +158,7 @@ def _search_content_sentences(
                 sentences_index.append((start_index, end_index))
 
     return [
-        "\n".join(map(lambda s: s.strip(), sentences[start:end])).replace(
+        "\n".join(s.strip() for s in sentences[start:end]).replace(
             keyword, highlight % keyword
         )
         for (start, end) in sentences_index
