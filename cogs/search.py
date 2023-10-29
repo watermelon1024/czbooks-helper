@@ -151,7 +151,14 @@ class SearchCog(BaseCog):
         novel = await self.bot.db.get_or_fetch_novel(
             czbook.utils.get_code(link) or link
         )
-        results = czbook.search_content_sentences(novel.chapter_list, keyword, "__***%s***__")
+        results = czbook.search_content_sentences(
+            novel.chapter_list, keyword, "__***%s***__"
+        )
+        if not results:
+            return await ctx.respond(
+                embed=Embed(title="無搜尋結果", color=discord.Color.red())
+            )
+
         embed = Embed(
             title=f"{novel.title}搜尋結果", url=f"https://czbooks.net/n/{novel.id}"
         )
@@ -162,6 +169,7 @@ class SearchCog(BaseCog):
             if len(embed) > 6000:
                 embed.remove_field(-1)
                 break
+        embed.set_footer(text=f"共{len(results)}筆結果")
 
         await ctx.respond(embed=embed)
 
