@@ -123,7 +123,7 @@ def search_content(
 ) -> list[ContentSearchResult]:
     """
     Return: `list[ContentSearchResult]`
-        the search results in content with the keyword.
+        the search results' context in content with the keyword.
 
     Raise:
         if chapter hasn't had content.
@@ -136,6 +136,54 @@ def search_content(
             ContentSearchResult(chapter=chapter, context=result)
             for result in _search_content(
                 chapter.content, keyword, highlight, context_length
+            )
+        )
+
+    return results
+
+
+def _search_content_sentences(
+    text: str, keyword: str, highlight: str = None, context_sentences: int = 2
+) -> list[str]:
+    sentences = text.split("\n")
+    sentences_index: list[tuple[int, int]] = []
+    start_index = 0
+    for index, sentence in enumerate(sentences):
+        if keyword in sentence:
+            start_index = max(0, index - context_sentences)
+            end_index = index + context_sentences
+            if sentences_index and start_index <= sentences_index[-1][1]:
+                sentences_index[-1] = (sentences_index[-1][0], end_index)
+            else:
+                sentences_index.append((start_index, end_index))
+
+    return [
+        "\n".join(sentences[start:end]).replace(keyword, highlight % keyword)
+        for (start, end) in sentences_index
+    ]
+
+
+def search_content_sentences(
+    chapter_list: ChapterList,
+    keyword: str,
+    highlight: str = None,
+    context_sentences: int = 2,
+) -> list[ContentSearchResult]:
+    """
+    Return: `list[ContentSearchResult]`
+        the search results' context sentences in content with the keyword.
+
+    Raise:
+        if chapter hasn't had content.
+    """
+    results = []
+    for chapter in chapter_list:
+        if not chapter.content:
+            raise RuntimeError(f"Chapter '{chapter.name}' hasn't had content")
+        results.extend(
+            ContentSearchResult(chapter=chapter, context=result)
+            for result in _search_content_sentences(
+                chapter.content, keyword, highlight, context_sentences
             )
         )
 
