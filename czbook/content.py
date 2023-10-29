@@ -151,7 +151,7 @@ def _search_content_sentences(
     for index, sentence in enumerate(sentences):
         if keyword in sentence:
             start_index = max(0, index - context_sentences)
-            end_index = index + context_sentences
+            end_index = index + context_sentences + 1
             if sentences_index and start_index <= sentences_index[-1][1]:
                 sentences_index[-1] = (sentences_index[-1][0], end_index)
             else:

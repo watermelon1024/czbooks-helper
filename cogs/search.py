@@ -151,7 +151,7 @@ class SearchCog(BaseCog):
         novel = await self.bot.db.get_or_fetch_novel(
             czbook.utils.get_code(link) or link
         )
-        results = czbook.search_content(novel.chapter_list, keyword, "__**%s**__")
+        results = czbook.search_content_sentences(novel.chapter_list, keyword, "__***%s***__")
         embed = Embed(
             title=f"{novel.title}搜尋結果", url=f"https://czbooks.net/n/{novel.id}"
         )
