@@ -108,7 +108,7 @@ def _search_content(
             context_positions.append((start_position, end_position))
     if highlight:
         return [
-            text[start:end].replace(keyword, highlight % keyword)
+            text[start:end].strip().replace(keyword, highlight % keyword)
             for (start, end) in context_positions
         ]
 
@@ -158,7 +158,9 @@ def _search_content_sentences(
                 sentences_index.append((start_index, end_index))
 
     return [
-        "\n".join(sentences[start:end]).replace(keyword, highlight % keyword)
+        "\n".join(map(lambda s: s.strip(), sentences[start:end])).replace(
+            keyword, highlight % keyword
+        )
         for (start, end) in sentences_index
     ]
 
