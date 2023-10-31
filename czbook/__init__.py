@@ -17,6 +17,6 @@ from .chapter import ChapterInfo, ChapterList
 from .comment import Comment, CommentList
 from .content import GetContentState, GetContent, ContentSearchResult, search_content, search_content_sentences
 from .czbook import Novel, fetch_novel
-from .error import NotFoundError
+from .error import *
 from .http import HyperLink
 from .search import SearchResult, search, search_advance

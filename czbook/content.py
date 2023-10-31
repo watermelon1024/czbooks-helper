@@ -5,6 +5,7 @@ import aiohttp
 from .http import fetch_as_html
 from .utils import now_timestamp, time_diff, is_out_of_date
 from .chapter import ChapterInfo, ChapterList
+from .error import ChapterNoContentError
 
 
 class GetContentState:
@@ -133,7 +134,7 @@ def search_content(
     results = []
     for chapter in chapter_list:
         if not chapter.content:
-            raise RuntimeError(f"Chapter '{chapter.name}' hasn't had content")
+            raise ChapterNoContentError(f"Chapter '{chapter.name}' hasn't had content")
         results.extend(
             ContentSearchResult(chapter=chapter, context=result)
             for result in _search_content(

@@ -14,3 +14,12 @@ class TooManyRequestsError(Exception):
 
     def __init__(self, *args: object) -> None:
         super().__init__(*args)
+
+
+class ChapterNoContentError(Exception):
+    """
+    Chapter hasn't had content.
+    """
+
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
