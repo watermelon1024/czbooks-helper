@@ -153,8 +153,8 @@ class SearchCog(BaseCog):
             novel = await self.bot.db.get_or_fetch_novel(
                 czbook.utils.get_code(link) or link
             )
-            results = czbook.search_content_sentences(
-                novel.chapter_list, keyword, "__***%s***__"
+            results = czbook.search_content(
+                novel.chapter_list, keyword, context_length=7
             )
         except czbook.NotFoundError:
             return await ctx.respond(
@@ -174,7 +174,13 @@ class SearchCog(BaseCog):
         )
         for result in results:
             embed.add_field(
-                name=f"{result.chapter.name}", value=result.context, inline=False
+                name=f"{result.chapter.name}",
+                value=(
+                    f"[{result.context.replace(keyword, f'__***{keyword}***__')}]"
+                    f"({result.chapter.url}#:~:text="
+                    f"{result.context[2:-4].replace(keyword, f'-,{keyword},-')})"
+                ),
+                inline=False,
             )
             if len(embed) > 6000:
                 embed.remove_field(-1)
