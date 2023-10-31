@@ -176,16 +176,15 @@ class SearchCog(BaseCog):
             embed.add_field(
                 name=f"{result.chapter.name}",
                 value=(
-                    f"[{result.context.replace(keyword, f'__***{keyword}***__')}]"
-                    f"({result.chapter.url}#:~:text="
-                    f"{result.context[2:-4].replace(keyword, f'-,{keyword},-')})"
+                    f"[{result.display.replace(keyword, f'__***{keyword}***__')}]"
+                    f"({result.jump_url})"
                 ),
                 inline=False,
             )
             if len(embed) > 6000:
                 embed.remove_field(-1)
                 break
-        embed.set_footer(text=f"共{len(results)}筆結果")
+        embed.set_footer(text=f"已顯示{len(embed.fields)}/共{len(results)}筆結果")
 
         await ctx.respond(embed=embed)
 
