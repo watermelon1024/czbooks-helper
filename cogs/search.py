@@ -148,12 +148,22 @@ class SearchCog(BaseCog):
     ):
         print(f"{ctx.author} used /search content link: {link} keyword: {keyword}")
         await ctx.defer()
-        novel = await self.bot.db.get_or_fetch_novel(
-            czbook.utils.get_code(link) or link
-        )
-        results = czbook.search_content_sentences(
-            novel.chapter_list, keyword, "__***%s***__"
-        )
+
+        try:
+            novel = await self.bot.db.get_or_fetch_novel(
+                czbook.utils.get_code(link) or link
+            )
+            results = czbook.search_content_sentences(
+                novel.chapter_list, keyword, "__***%s***__"
+            )
+        except czbook.NotFoundError:
+            return await ctx.respond(
+                embed=Embed(title="未知的書本", color=discord.Color.red()),
+            )
+        except czbook.ChapterNoContentError:
+            return await ctx.respond(
+                embed=Embed(title="該書尚未取得內文", color=discord.Color.red()),
+            )
         if not results:
             return await ctx.respond(
                 embed=Embed(title="無搜尋結果", color=discord.Color.red())
