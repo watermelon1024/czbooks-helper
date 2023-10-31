@@ -191,7 +191,7 @@ def search_content_sentences(
     results = []
     for chapter in chapter_list:
         if not chapter.content:
-            raise RuntimeError(f"Chapter '{chapter.name}' hasn't had content")
+            raise ChapterNoContentError(f"Chapter '{chapter.name}' hasn't had content")
         results.extend(
             ContentSearchResult(chapter=chapter, context=result)
             for result in _search_content_sentences(
