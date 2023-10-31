@@ -11,6 +11,8 @@ DICT_SEARCH_BY = {
     "hashtag": "hashtag",
     "author": "a",
 }
+RE_WHITESPACE_CHAR = re.compile(r"\s")
+
 # crawler
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"  # noqa
 CRAWLER_HEADER = {"User-Agent": USER_AGENT}

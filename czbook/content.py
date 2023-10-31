@@ -1,10 +1,12 @@
 import asyncio
+import re
 
 import aiohttp
 
 from .http import fetch_as_html
 from .utils import now_timestamp, time_diff, is_out_of_date
 from .chapter import ChapterInfo, ChapterList
+from .const import RE_WHITESPACE_CHAR
 from .error import ChapterNoContentError
 
 
@@ -85,11 +87,48 @@ class GetContent:
 
 class ContentSearchResult:
     def __init__(
-        self, chapter: ChapterInfo, context: str, position: int = None
+        self,
+        chapter: ChapterInfo,
+        keyword: str,
+        raw_context: str,
     ) -> None:
-        self.chapter = chapter
-        self.context = context
-        self.position = position
+        self._chapter = chapter
+        self._keyword = keyword
+        self._raw_context = raw_context
+        self._display = None
+        self._jump_url = None
+
+    @property
+    def chapter(self) -> ChapterInfo:
+        return self._chapter
+
+    @property
+    def keyword(self) -> str:
+        return self._keyword
+
+    @property
+    def display(self) -> str:
+        """
+        Retrun the raw context without whitespace.
+        """
+        if not self._display:
+            self._display = re.sub(RE_WHITESPACE_CHAR, "", self._raw_context)
+        return self._display
+
+    def display_highlight(self, highlight: str) -> str:
+        """
+        highlight must be like: "**%s**"
+        """
+        return self.display.replace(self.keyword, highlight % self.keyword)
+
+    @property
+    def jump_url(self) -> str:
+        if not self._jump_url:
+            self._jump_url = (
+                f"{self.chapter.url}#:~:text="
+                f"{self.display[2:-4].replace(self.keyword, f'-,{self.keyword},-')}"
+            )
+        return self._jump_url
 
 
 def _search_content(
@@ -136,7 +175,7 @@ def search_content(
         if not chapter.content:
             raise ChapterNoContentError(f"Chapter '{chapter.name}' hasn't had content")
         results.extend(
-            ContentSearchResult(chapter=chapter, context=result)
+            ContentSearchResult(chapter=chapter, keyword=keyword, raw_context=result)
             for result in _search_content(
                 chapter.content, keyword, highlight, context_length
             )
@@ -193,7 +232,7 @@ def search_content_sentences(
         if not chapter.content:
             raise ChapterNoContentError(f"Chapter '{chapter.name}' hasn't had content")
         results.extend(
-            ContentSearchResult(chapter=chapter, context=result)
+            ContentSearchResult(chapter=chapter, keyword=keyword, raw_context=result)
             for result in _search_content_sentences(
                 chapter.content, keyword, highlight, context_sentences
             )
