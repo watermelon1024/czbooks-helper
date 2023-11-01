@@ -85,16 +85,44 @@ class GetContent:
         return state
 
 
+def _get_context_without_space(s: str, pos: int, length: int, keyword_len: int) -> str:
+    result = ""
+
+    current_pos = pos
+    count = 0
+    while current_pos >= 0 and count < length:
+        if not (c := s[current_pos]).isspace():
+            result = c + result
+            count += 1
+        current_pos -= 1
+
+    s_len = len(s)
+    current_pos = pos + keyword_len + 1
+    count = 0
+    while current_pos < s_len and count < length:
+        if not (c := s[current_pos]).isspace():
+            result += c
+            count += 1
+        current_pos += 1
+
+    return result
+
+
 class ContentSearchResult:
     def __init__(
         self,
         chapter: ChapterInfo,
         keyword: str,
-        raw_context: str,
+        position: int,
+        context_length: int,
+        highlight: str = None,
     ) -> None:
         self._chapter = chapter
         self._keyword = keyword
-        self._raw_context = raw_context
+        self._keyword_len = len(keyword)
+        self._position = position
+        self._context_len = context_length
+        self._highlight = highlight
         self._display = None
         self._jump_url = None
 
@@ -112,14 +140,21 @@ class ContentSearchResult:
         Retrun the raw context without whitespace.
         """
         if not self._display:
-            self._display = re.sub(RE_WHITESPACE_CHAR, "", self._raw_context)
+            self._display = _get_context_without_space(
+                self.chapter.content,
+                self._position,
+                self._context_len,
+                self._keyword_len,
+            )
         return self._display
 
-    def display_highlight(self, highlight: str) -> str:
+    def display_highlight(self, highlight: str = None) -> str:
         """
         highlight must be like: "**%s**"
         """
-        return self.display.replace(self.keyword, highlight % self.keyword)
+        return self.display.replace(
+            self.keyword, (highlight % self.keyword) if highlight else self._highlight
+        )
 
     @property
     def jump_url(self) -> str:
@@ -131,30 +166,14 @@ class ContentSearchResult:
         return self._jump_url
 
 
-def _search_content(
-    text: str, keyword: str, highlight: str = None, context_length: int = 20
-) -> list[str]:
-    keyword_length = len(keyword)
+def _search_content_pos(text: str, keyword: str) -> list[int]:
     keyword_position = 0
-    context_positions: list[tuple[int, int]] = []
+    context_positions: list[int] = []
 
     while (keyword_position := text.find(keyword, keyword_position + 1)) != -1:
-        start_position = max(0, keyword_position - context_length)
-        end_position = keyword_position + keyword_length + context_length
+        context_positions.append(keyword_position)
 
-        if context_positions and start_position <= context_positions[-1][1]:
-            context_positions[-1] = (context_positions[-1][0], end_position)
-        else:
-            context_positions.append((start_position, end_position))
-
-    if highlight:
-        highlight = highlight % keyword
-        return [
-            text[start:end].strip().replace(keyword, highlight)
-            for (start, end) in context_positions
-        ]
-
-    return [text[start:end] for (start, end) in context_positions]
+    return context_positions
 
 
 def search_content(
@@ -164,78 +183,30 @@ def search_content(
     context_length: int = 20,
 ) -> list[ContentSearchResult]:
     """
+    Args:
+        highlight must be like: "**%s**"
+
     Return: `list[ContentSearchResult]`
         the search results' context in content with the keyword.
 
     Raise:
         if chapter hasn't had content.
     """
-    results = []
-    for chapter in chapter_list:
-        if not chapter.content:
-            raise ChapterNoContentError(f"Chapter '{chapter.name}' hasn't had content")
-        results.extend(
-            ContentSearchResult(chapter=chapter, keyword=keyword, raw_context=result)
-            for result in _search_content(
-                chapter.content, keyword, highlight, context_length
-            )
-        )
-
-    return results
-
-
-def _search_content_sentences(
-    text: str, keyword: str, highlight: str = None, context_sentences: int = 2
-) -> list[str]:
-    sentences = text.split("\n")
-    sentences_index: list[tuple[int, int]] = []
-    start_index = 0
-    for index, sentence in enumerate(sentences):
-        if keyword in sentence:
-            start_index = max(0, index - context_sentences)
-            end_index = index + context_sentences + 1
-            if sentences_index and start_index <= sentences_index[-1][1]:
-                sentences_index[-1] = (sentences_index[-1][0], end_index)
-            else:
-                sentences_index.append((start_index, end_index))
-
     if highlight:
         highlight = highlight % keyword
-        return [
-            "\n".join(s.strip() for s in sentences[start:end]).replace(
-                keyword, highlight
-            )
-            for (start, end) in sentences_index
-        ]
-
-    return [
-        "\n".join(s.strip() for s in sentences[start:end])
-        for (start, end) in sentences_index
-    ]
-
-
-def search_content_sentences(
-    chapter_list: ChapterList,
-    keyword: str,
-    highlight: str = None,
-    context_sentences: int = 2,
-) -> list[ContentSearchResult]:
-    """
-    Return: `list[ContentSearchResult]`
-        the search results' context sentences in content with the keyword.
-
-    Raise:
-        if chapter hasn't had content.
-    """
     results = []
     for chapter in chapter_list:
         if not chapter.content:
             raise ChapterNoContentError(f"Chapter '{chapter.name}' hasn't had content")
         results.extend(
-            ContentSearchResult(chapter=chapter, keyword=keyword, raw_context=result)
-            for result in _search_content_sentences(
-                chapter.content, keyword, highlight, context_sentences
+            ContentSearchResult(
+                chapter=chapter,
+                keyword=keyword,
+                position=pos,
+                context_length=context_length,
+                highlight=highlight,
             )
+            for pos in _search_content_pos(chapter.content, keyword)
         )
 
     return results
