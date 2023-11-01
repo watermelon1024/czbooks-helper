@@ -125,9 +125,9 @@ class ContentSearchResult:
     def jump_url(self) -> str:
         if not self._jump_url:
             self._jump_url = (
-                f"{self.chapter.url}#:~:text="
-                f"{self.display[2:-4].replace(self.keyword, f'-,{self.keyword},-')}"
+                f"{self.chapter.url}#:~:text={self.display_highlight('-,%s,-')}"
             )
+
         return self._jump_url
 
 

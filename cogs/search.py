@@ -154,7 +154,7 @@ class SearchCog(BaseCog):
                 czbook.utils.get_code(link) or link
             )
             results = czbook.search_content(
-                novel.chapter_list, keyword, context_length=7
+                novel.chapter_list, keyword, context_length=16
             )
         except czbook.NotFoundError:
             return await ctx.respond(
@@ -175,10 +175,7 @@ class SearchCog(BaseCog):
         for result in results:
             embed.add_field(
                 name=f"{result.chapter.name}",
-                value=(
-                    f"[{result.display.replace(keyword, f'__***{keyword}***__')}]"
-                    f"({result.jump_url})"
-                ),
+                value=f"[{result.display_highlight('__***%s***__')}]({result.jump_url})",
                 inline=False,
             )
             if len(embed) > 6000:
