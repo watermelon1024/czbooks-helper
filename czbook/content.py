@@ -1,12 +1,10 @@
 import asyncio
-import re
 
 import aiohttp
 
 from .http import fetch_as_html
 from .utils import now_timestamp, time_diff, is_out_of_date
 from .chapter import ChapterInfo, ChapterList
-from .const import RE_WHITESPACE_CHAR
 from .error import ChapterNoContentError
 
 
@@ -89,7 +87,7 @@ def _get_context_without_space(s: str, pos: int, length: int, keyword_len: int) 
     result = ""
 
     current_pos = pos
-    count = 0
+    count = -1
     while current_pos >= 0 and count < length:
         if not (c := s[current_pos]).isspace():
             result = c + result
@@ -97,8 +95,8 @@ def _get_context_without_space(s: str, pos: int, length: int, keyword_len: int) 
         current_pos -= 1
 
     s_len = len(s)
-    current_pos = pos + keyword_len + 1
-    count = 0
+    current_pos = pos + 1
+    count = -keyword_len + 1
     while current_pos < s_len and count < length:
         if not (c := s[current_pos]).isspace():
             result += c
@@ -159,8 +157,11 @@ class ContentSearchResult:
     @property
     def jump_url(self) -> str:
         if not self._jump_url:
+            start_index = self._context_len - 5
+            end_index = -self._context_len + 4
             self._jump_url = (
-                f"{self.chapter.url}#:~:text={self.display_highlight('-,%s,-')}"
+                f"{self.chapter.url}#:~:text="
+                f"{self.display_highlight('-,%s,-')[start_index:end_index]}"
             )
 
         return self._jump_url

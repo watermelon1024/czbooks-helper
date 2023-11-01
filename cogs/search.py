@@ -154,7 +154,7 @@ class SearchCog(BaseCog):
                 czbook.utils.get_code(link) or link
             )
             results = czbook.search_content(
-                novel.chapter_list, keyword, context_length=16
+                novel.chapter_list, keyword, context_length=8
             )
         except czbook.NotFoundError:
             return await ctx.respond(
