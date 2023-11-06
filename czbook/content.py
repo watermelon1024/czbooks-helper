@@ -27,9 +27,7 @@ class GetContentState:
         self._last_update = 0
         self._progress_bar_cache = None
 
-    def _progress_bar(
-        self, filled_char: str = "-", bar_length: int = 27
-    ) -> tuple[float, str]:
+    def _progress_bar(self, filled_char: str = "-", bar_length: int = 27) -> tuple[float, str]:
         percentage = self.current / self.total
         filled_length = int(bar_length * percentage)
         return (
@@ -48,16 +46,16 @@ class GetContentState:
 
         self.percentage = progress
         self.eta = eta
-        self._progress_bar_cache = f"第{self.current}/{self.total}章 {progress*100:.1f}%\n{bar}預計剩餘時間：{eta_display}"  # noqa
+        self._progress_bar_cache = (
+            f"第{self.current}/{self.total}章 {progress*100:.1f}%\n{bar}預計剩餘時間：{eta_display}"  # noqa
+        )
         self._last_update = now
 
         return self._progress_bar_cache
 
 
 class GetContent:
-    async def get_content(
-        self, chapter_list: ChapterList, state: GetContentState
-    ) -> None:
+    async def get_content(self, chapter_list: ChapterList, state: GetContentState) -> None:
         """
         Get the content of the novel.
         """

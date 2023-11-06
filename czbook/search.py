@@ -27,9 +27,9 @@ async def search(
     soup = await fetch_as_html(f"https://czbooks.net/{_by}/{keyword}/{page}")
 
     if not (
-        novel_list_ul := soup.find(
-            "ul", class_="nav novel-list style-default"
-        ).find_all("li", class_="novel-item-wrapper")
+        novel_list_ul := soup.find("ul", class_="nav novel-list style-default").find_all(
+            "li", class_="novel-item-wrapper"
+        )
     ):
         return None
 
@@ -69,9 +69,7 @@ async def search_advance(
             if novel := await search(author, "author", page):
                 author_set.update(novel)
 
-        sets = [
-            set_ for set_ in [name_set, *hashtag_set, author_set] if set_ is not None
-        ]
+        sets = [set_ for set_ in [name_set, *hashtag_set, author_set] if set_ is not None]
         result = sets[0].intersection(*sets[1:])
         if len(result) >= 20 or page >= 20 or is_out_of_date(start, timeout):
             break

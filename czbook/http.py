@@ -31,9 +31,7 @@ async def _fetch_url(
     now_retry: int,
 ) -> str | dict:
     try:
-        async with session.get(
-            url, headers=CRAWLER_HEADER, timeout=DEFAULT_TIMEOUT
-        ) as response:
+        async with session.get(url, headers=CRAWLER_HEADER, timeout=DEFAULT_TIMEOUT) as response:
             if response.status == 404:
                 raise NotFoundError("404 Not found")
             if response.status == 429:

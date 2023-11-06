@@ -4,7 +4,6 @@ from .db import DATABASE
 from .module import CategoryModule, CategoryType, NovelModule, NovelType
 
 
-
 class DataBase:
     NovelModule = NovelModule
     CategoryModule = CategoryModule
