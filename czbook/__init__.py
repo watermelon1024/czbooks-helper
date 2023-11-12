@@ -15,8 +15,8 @@ from .novel_info import NovelInfo, Author, Category, Thumbnail
 from .novel_info.hashtag import Hashtag, HashtagList
 from .chapter import ChapterInfo, ChapterList
 from .comment import Comment, CommentList
+from .content import GetContentState, GetContent, ContentSearchResult, search_content
 from .czbook import Novel, fetch_novel
-from .error import NotFoundError
-from .get_content import GetContentState, GetContent
+from .error import *
 from .http import HyperLink
 from .search import SearchResult, search, search_advance

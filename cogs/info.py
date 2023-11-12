@@ -101,9 +101,7 @@ class InfoView(View):
         self.overview_button.disabled = True
         self.chapter_button.disabled = False
         self.comment_button.disabled = False
-        self.get_content_button.disabled = (
-            interaction.message.components[-1].children[0].disabled
-        )
+        self.get_content_button.disabled = interaction.message.components[-1].children[0].disabled
         await interaction.response.defer()
         novel = await self.bot.db.get_or_fetch_novel(
             czbook.utils.get_code(interaction.message.embeds[0].url)
@@ -114,9 +112,7 @@ class InfoView(View):
         self.overview_button.disabled = False
         self.chapter_button.disabled = True
         self.comment_button.disabled = False
-        self.get_content_button.disabled = (
-            interaction.message.components[-1].children[0].disabled
-        )
+        self.get_content_button.disabled = interaction.message.components[-1].children[0].disabled
         await interaction.response.defer()
         novel = await self.bot.db.get_or_fetch_novel(
             czbook.utils.get_code(interaction.message.embeds[0].url)
@@ -127,9 +123,7 @@ class InfoView(View):
         self.overview_button.disabled = False
         self.chapter_button.disabled = False
         self.comment_button.disabled = True
-        self.get_content_button.disabled = (
-            interaction.message.components[-1].children[0].disabled
-        )
+        self.get_content_button.disabled = interaction.message.components[-1].children[0].disabled
         await interaction.response.defer()
         novel = await self.bot.db.get_or_fetch_novel(
             czbook.utils.get_code(interaction.message.embeds[0].url)
@@ -137,9 +131,7 @@ class InfoView(View):
         await interaction.message.edit(embed=await novel.comment_embed(), view=self)
 
     async def get_content_button_callback(self, interaction: Interaction):
-        self.get_content_button.disabled = (
-            interaction.message.components[-1].children[0].disabled
-        )
+        self.get_content_button.disabled = interaction.message.components[-1].children[0].disabled
         self.get_content_button.disabled = True
         await interaction.response.edit_message(view=self)
         novel = await self.bot.db.get_or_fetch_novel(
@@ -190,9 +182,7 @@ class InfoView(View):
 
     async def cancel_get_content(self, interaction: Interaction):
         message = await get_or_fetch_message_from_reference(interaction.message)
-        novel = await self.bot.db.get_or_fetch_novel(
-            czbook.utils.get_code(message.embeds[0].url)
-        )
+        novel = await self.bot.db.get_or_fetch_novel(czbook.utils.get_code(message.embeds[0].url))
         if novel.content_cache:
             return
         self.bot.get_content_msg.discard(interaction.message.id)

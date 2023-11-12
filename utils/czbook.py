@@ -68,9 +68,7 @@ class Novel(czbook.Novel):
 
         self._chapter_embed_cache = Embed(
             title=f"{self.title}章節列表",
-            description=czbook.utils.hyper_link_list_to_str(
-                self.chapter_list, 4096, "、", "⋯⋯"
-            ),
+            description=czbook.utils.hyper_link_list_to_str(self.chapter_list, 4096, "、", "⋯⋯"),
             url=f"https://czbooks.net/n/{self.id}",
             color=self.get_theme_color(),
         )

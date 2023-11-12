@@ -58,9 +58,7 @@ class DataBase(db.DataBase):
     async def fetch_novel(self, id: str, first: bool = True) -> Novel:
         return Novel.from_original_novel(await czbook.fetch_novel(id, first))
 
-    async def get_or_fetch_novel(
-        self, id: str, update_when_out_of_date: bool = True
-    ) -> Novel:
+    async def get_or_fetch_novel(self, id: str, update_when_out_of_date: bool = True) -> Novel:
         if novel := self.get_cache(id):
             if update_when_out_of_date and is_out_of_date(novel.last_fetch_time, 3600):
                 await novel.update()
@@ -76,11 +74,7 @@ class DataBase(db.DataBase):
                 id=data.novel_id,
                 title=data.titel,
                 description=data.description,
-                thumbnail=(
-                    czbook.Thumbnail.from_json(data.thumbnail)
-                    if data.thumbnail
-                    else None
-                ),
+                thumbnail=(czbook.Thumbnail.from_json(data.thumbnail) if data.thumbnail else None),
                 author=czbook.Author(data.author),
                 state=data.state,
                 last_update=data.last_update,

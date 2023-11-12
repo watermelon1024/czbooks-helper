@@ -125,6 +125,54 @@ class SearchCog(BaseCog):
             ephemeral=True,
         )
 
+    @search_group.command(
+        guild_only=True,
+        name="content",
+        description="內容搜尋",
+    )
+    @discord.option(
+        "link",
+        str,
+        description="欲搜尋的書本",
+    )
+    @discord.option(
+        "keyword",
+        str,
+        description="欲搜尋的關鍵字",
+    )
+    async def content(
+        self,
+        ctx: ApplicationContext,
+        link: str,
+        keyword: str,
+    ):
+        print(f"{ctx.author} used /search content link: {link} keyword: {keyword}")
+        await ctx.defer()
+
+        try:
+            novel = await self.bot.db.get_or_fetch_novel(czbook.utils.get_code(link) or link)
+            results = czbook.search_content(novel.chapter_list, keyword, context_length=8)
+        except czbook.NotFoundError:
+            return await ctx.respond(embed=Embed(title="未知的書本", color=discord.Color.red()))
+        except czbook.ChapterNoContentError:
+            return await ctx.respond(embed=Embed(title="該書尚未取得內文", color=discord.Color.red()))
+        if not results:
+            return await ctx.respond(embed=Embed(title="無搜尋結果", color=discord.Color.red()))
+
+        embed = Embed(title=f"{novel.title}搜尋結果", url=f"https://czbooks.net/n/{novel.id}")
+        for result in results:
+            embed.add_field(
+                name=f"{result.chapter.name}",
+                value=f"[{result.display_highlight('__***%s***__')}]({result.jump_url})",
+                inline=False,
+            )
+            if len(embed) > 6000:
+                embed.remove_field(-1)
+                break
+        embed.set_footer(text=f"已顯示{len(embed.fields)}/共{len(results)}筆結果")
+
+        await ctx.respond(embed=embed)
+
     @discord.Cog.listener()
     async def on_ready(self):
         self.bot.add_view(SearchView(self.bot))

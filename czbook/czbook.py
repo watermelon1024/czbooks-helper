@@ -2,7 +2,7 @@ import asyncio
 from .novel_info import NovelInfo, Author, Category, HashtagList, Thumbnail
 from .chapter import ChapterList, ChapterInfo
 from .comment import CommentList
-from .get_content import GetContent, GetContentState
+from .content import GetContent, GetContentState
 from .http import fetch_as_html
 from .utils import now_timestamp
 
@@ -88,10 +88,7 @@ class Novel:
             + (
                 f"本章擷取失敗，請至網站閱讀：{chapter.url}"
                 if chapter._error
-                else (
-                    ("(本章可能非內文)\n\n" if chapter.maybe_not_conetent else "\n")
-                    + chapter.content
-                )
+                else (("(本章可能非內文)\n\n" if chapter.maybe_not_conetent else "\n") + chapter.content)
             )
             for chapter in self.chapter_list
         )
@@ -196,10 +193,7 @@ async def fetch_novel(id: str, first: bool = True) -> Novel:
         views=state_children[5].text,
         category=Category(category_a.text, "https:" + category_a["href"]),
         hashtags=HashtagList.from_list(
-            [
-                hashtag.text
-                for hashtag in soup.find("ul", class_="hashtag").find_all("a")[:-1]
-            ]
+            [hashtag.text for hashtag in soup.find("ul", class_="hashtag").find_all("a")[:-1]]
         ),
     )
     if info.thumbnail and first:
