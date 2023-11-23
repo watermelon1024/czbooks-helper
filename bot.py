@@ -1,5 +1,6 @@
 import os
 from typing import Any
+import logging
 
 import discord
 
@@ -16,6 +17,7 @@ from utils.czbook import (
     chapter_list_to_str,
     chapter_str_to_list,
 )
+from utils.logger import new_logger
 
 load_dotenv()
 
@@ -93,6 +95,17 @@ class Bot(discord.Bot):
         super().__init__(description, *args, **options)
         self.get_content_msg: set = set()
         self.db = DataBase()
+        self._logger = new_logger("bot", level="DEBUG")
+
+        for k, v in self.load_extension("cogs", recursive=True, store=True).items():
+            if v is True:
+                self.logger.debug(f"Loaded extension {k}")
+            else:
+                self.logger.error(f"Failed to load extension {k} with exception: {v}")
+
+    @property
+    def logger(self) -> logging.Logger:
+        return self._logger
 
     # bot event
     async def on_ready(self) -> None:
@@ -122,10 +135,11 @@ class BaseCog(discord.Cog):
         super().__init__(*args, **kwargs)
         self.bot: Bot = bot
 
-
-bot = Bot()
-bot.load_extension("cogs", recursive=True)
+    @property
+    def logger(self) -> logging.Logger:
+        return self.bot.logger
 
 
 if __name__ == "__main__":
+    bot = Bot()
     bot.run(os.getenv("TOKEN"))

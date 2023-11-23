@@ -25,7 +25,6 @@ class InfoCog(BaseCog):
         description="欲查詢的書本連結",
     )
     async def info(self, ctx: ApplicationContext, link: str):
-        print(f"{ctx.author} used /info link: {link}")
         await ctx.defer()
         code = czbook.utils.get_code(link) or link
         try:

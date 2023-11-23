@@ -43,7 +43,6 @@ class SearchCog(BaseCog):
         keyword: str,
         by: Literal["name", "hashtag", "author"],
     ):
-        print(f"{ctx.author} used /search keyword: {keyword} by: {by}")
         await ctx.defer()
         if results := await czbook.search(keyword, by):
             return await ctx.respond(
@@ -97,9 +96,6 @@ class SearchCog(BaseCog):
         hashtag: str,
         author: str,
     ):
-        print(
-            f"{ctx.author} used /search advanced name: {name} hashtag: {hashtag} author: {author}"
-        )
         await ctx.defer()
         if results := await czbook.search_advance(
             name=name or None, hashtag=hashtag.split(",") or None, author=author or None
@@ -146,7 +142,6 @@ class SearchCog(BaseCog):
         link: str,
         keyword: str,
     ):
-        print(f"{ctx.author} used /search content link: {link} keyword: {keyword}")
         await ctx.defer()
 
         try:
