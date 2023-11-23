@@ -8,6 +8,7 @@ from discord.ui import View, Select
 import czbook
 from bot import BaseCog, Bot
 from cogs.info import InfoView
+from utils.discord import context_info
 
 
 class SearchCog(BaseCog):
@@ -195,7 +196,8 @@ class SearchView(View):
 
     async def select_callback(self, interaction: Interaction):
         code = interaction.data["values"][0]
-        print(f"{interaction.user} used /info link: {code}")
+        self.bot.logger.info(f"{context_info(interaction)}: get info of {code}")
+
         await interaction.response.defer()
 
         novel = await self.bot.db.get_or_fetch_novel(code)

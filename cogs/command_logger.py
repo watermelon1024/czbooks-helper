@@ -8,7 +8,7 @@ import discord
 from discord.ext import commands
 
 from bot import BaseCog, Bot
-from utils.discord import get_user_name
+from utils.discord import context_info
 
 
 class CmdLogger(BaseCog):
@@ -39,12 +39,8 @@ class CmdLogger(BaseCog):
             else ctx.command.name
         )
         command_args = f" - {command_args}" if command_args else ""
-        msg = (
-            f"[{ctx.guild.name} #{ctx.channel.name}] {get_user_name(ctx.author)}: "
-            f"({command_type}-command) {command_name}{command_args}"
-        )
+        msg = f"{context_info(ctx)}: ({command_type}-command) {command_name}{command_args}"
         self.bot.logger.info(msg)
-
 
     @discord.Cog.listener()
     async def on_command(self, ctx: commands.Context) -> None:

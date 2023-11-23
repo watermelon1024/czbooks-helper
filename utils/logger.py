@@ -38,6 +38,7 @@ def new_logger(
     :type terminal_formatter: str.
     :param file_formatter: file formatter.
     :type file_formatter: str.
+
     :return: logger.
     :rtype: logging.Logger
     """

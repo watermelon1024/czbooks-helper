@@ -7,7 +7,7 @@ from discord.ui import View, Button
 
 import czbook
 from bot import BaseCog, Bot
-from utils.discord import get_or_fetch_message_from_reference
+from utils.discord import get_or_fetch_message_from_reference, context_info
 
 
 class InfoCog(BaseCog):
@@ -143,7 +143,7 @@ class InfoView(View):
                 file=discord.File(novel.filelike_content, filename=f"{novel.id}.txt"),
             )
 
-        print(f"{interaction.user} gets {novel.title}'s content")
+        self.bot.logger.info(f"{context_info(interaction)}: get content of {novel.title}")
         msg = await interaction.message.reply(
             embed=Embed(
                 title="擷取內文中...",
@@ -187,7 +187,8 @@ class InfoView(View):
         self.bot.get_content_msg.discard(interaction.message.id)
         if not self.bot.get_content_msg:
             novel.cencel_get_content()
-        print(f"{interaction.user} cancel gets {novel.title}'s content")
+        self.bot.logger.info(f"{context_info(interaction)}: cancel get content of {novel.title}")
+
         await interaction.response.edit_message(
             embed=Embed(title="已取消"),
             view=None,
