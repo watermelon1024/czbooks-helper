@@ -8,8 +8,8 @@ class Author(HyperLink):
 
     def __init__(self, name: str) -> None:
         """
-        Initializes a new instance of the Author class.
-        
+        Initialize a new instance of the Author class.
+
         :param name: The name of the author.
         :type name: str
         """

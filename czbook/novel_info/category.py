@@ -9,7 +9,7 @@ class Category(HyperLink):
     def __init__(self, name: str, url: str) -> None:
         """
         Initialize a new instance of the Category class.
-        
+
         :param name: The name of the category.
         :type name: str
         :param url: The URL of the category.
